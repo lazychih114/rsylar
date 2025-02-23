@@ -1,0 +1,84 @@
+2025-02-22 22:20:56	255604	hello	0	[FATAL]	[root]	tests/test_log.cc:33	fatal msg
+2025-02-22 22:20:56	255604	hello	0	[ERROR]	[root]	tests/test_log.cc:34	err msg
+2025-02-22 22:20:56	255604	hello	0	[INFO]	[root]	tests/test_log.cc:50	logger config:- name: root
+  level: INFO
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+    - type: FileLogAppender
+      file: ./log.txt
+      level: DEBUG
+- name: system
+  level: DEBUG
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+- name: test_logger
+  level: WARN
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+      formatter: "%d:%rms%T%p%T%c%T%f:%l %m%n"
+2025-02-23 09:48:32	1230	hello	0	[FATAL]	[root]	tests/test_log.cc:33	fatal msg
+2025-02-23 09:48:32	1230	hello	0	[ERROR]	[root]	tests/test_log.cc:34	err msg
+2025-02-23 09:48:32	1230	hello	0	[INFO]	[root]	tests/test_log.cc:50	logger config:- name: root
+  level: INFO
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+    - type: FileLogAppender
+      file: ./log.txt
+      level: DEBUG
+- name: system
+  level: DEBUG
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+- name: test_logger
+  level: WARN
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+      formatter: "%d:%rms%T%p%T%c%T%f:%l %m%n"
+2025-02-23 11:09:53	1230	hello	0	[FATAL]	[root]	tests/test_log.cc:33	fatal msg
+2025-02-23 11:09:53	1230	hello	0	[ERROR]	[root]	tests/test_log.cc:34	err msg
+2025-02-23 11:09:53	1230	hello	0	[INFO]	[root]	tests/test_log.cc:50	logger config:- name: root
+  level: INFO
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+    - type: FileLogAppender
+      file: ./log.txt
+      level: DEBUG
+- name: system
+  level: DEBUG
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+- name: test_logger
+  level: WARN
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+      formatter: "%d:%rms%T%p%T%c%T%f:%l %m%n"
+2025-02-23 11:24:12	1230	hello	0	[FATAL]	[root]	tests/test_log.cc:33	fatal msg
+2025-02-23 11:24:12	1230	hello	0	[ERROR]	[root]	tests/test_log.cc:34	err msg
+2025-02-23 11:24:12	1230	hello	0	[INFO]	[root]	tests/test_log.cc:50	logger config:- name: root
+  level: INFO
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+    - type: FileLogAppender
+      file: ./log.txt
+      level: DEBUG
+- name: system
+  level: DEBUG
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+- name: test_logger
+  level: WARN
+  formatter: "%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"
+  appenders:
+    - type: StdoutLogAppender
+      level: DEBUG
+      formatter: "%d:%rms%T%p%T%c%T%f:%l %m%n"
