@@ -1,1 +1,0 @@
-/usr/bin/clang++-14 -fPIC  -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -g -shared -Wl,-soname,librsylar.so -o /root/rsylar/lib/librsylar.so CMakeFiles/rsylar.dir/sylar/log.cc.o CMakeFiles/rsylar.dir/sylar/mutex.cc.o CMakeFiles/rsylar.dir/sylar/util.cc.o 

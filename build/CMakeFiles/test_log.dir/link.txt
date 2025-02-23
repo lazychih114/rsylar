@@ -1,1 +1,0 @@
-/usr/bin/clang++-14  -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations -g CMakeFiles/test_log.dir/tests/test_log.cc.o -o /root/rsylar/bin/test_log  -Wl,-rpath,/root/rsylar/lib /root/rsylar/lib/librsylar.so -lyaml-cpp 

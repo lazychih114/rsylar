@@ -1,4 +1,0 @@
-/root/rsylar/build/CMakeFiles/rsylar.dir
-/root/rsylar/build/CMakeFiles/test_log.dir
-/root/rsylar/build/CMakeFiles/edit_cache.dir
-/root/rsylar/build/CMakeFiles/rebuild_cache.dir
