@@ -565,7 +565,6 @@ Logger::ptr LoggerManager::getLogger(const std::string& name) {
 }
 
 
-
 std::string LoggerManager::toYamlString() {
     MutexType::Lock lock(m_mutex);
     YAML::Node node;

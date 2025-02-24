@@ -23,6 +23,7 @@ set(LIB_SRC
     sylar/log.cc
     sylar/mutex.cc
     sylar/util.cc
+    sylar/env.cc
     )
 
 add_library(rsylar SHARED ${LIB_SRC})
@@ -34,6 +35,7 @@ set(LIBS
         )
 
 rsylar_add_executable(test_log "tests/test_log.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_env "tests/test_env.cc" rsylar "${LIBS}")
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
