@@ -81,6 +81,11 @@ public:
                     ,std::ios_base::openmode mode);
 };
 
+template<class T>
+const char* TypeToName() {
+    static const char* s_name = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
+    return s_name;
+}
 
 
 
