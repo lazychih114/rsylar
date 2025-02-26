@@ -22,9 +22,12 @@ include_directories(.)
 set(LIB_SRC
     sylar/config.cc
     sylar/env.cc
+    sylar/fiber.cc
     sylar/log.cc
     sylar/mutex.cc
+    sylar/thread.cc
     sylar/util.cc
+
     )
 
 add_library(rsylar SHARED ${LIB_SRC})
@@ -38,7 +41,9 @@ set(LIBS
 
 rsylar_add_executable(test_config "tests/test_config.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_env "tests/test_env.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_fiber "tests/test_fiber.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_log "tests/test_log.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_thread "tests/test_thread.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

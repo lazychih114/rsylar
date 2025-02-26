@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <stdlib.h>
-//#include "config.h"
+#include "config.h"
 
 namespace sylar {
 
@@ -133,10 +133,10 @@ std::string Env::getAbsoluteWorkPath(const std::string& path) const {
     if(path[0] == '/') {
         return path;
     }
-    return m_cwd + path;
-    // static sylar::ConfigVar<std::string>::ptr g_server_work_path =
-    //     sylar::Config::Lookup<std::string>("server.work_path");
-    // return g_server_work_path->getValue() + "/" + path;
+    //return m_cwd + path;
+    static sylar::ConfigVar<std::string>::ptr g_server_work_path =
+        sylar::Config::Lookup<std::string>("server.work_path");
+    return g_server_work_path->getValue() + "/" + path;
 }
 
 std::string Env::getConfigPath() {

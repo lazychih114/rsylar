@@ -10,9 +10,11 @@
 #include <vector>
 #include <stdarg.h>
 #include <map>
+#include "fiber.h"
 #include "util.h"
 #include "singleton.h"
-#include "mutex.h"
+#include "thread.h"
+
 /**
  * @brief 使用流式方式将日志级别level的日志写入到logger
  */
@@ -20,8 +22,8 @@
 #define SYLAR_LOG_LEVEL(logger, level) \
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, 1230,\
-                0,time(0), "hello"))).getSS()
+                        __FILE__, __LINE__, 0, sylar::GetThreadId(),\
+                sylar::Fiber::GetFiberId(),time(0), sylar::Thread::GetName()))).getSS()
 /**
  * @brief 使用流式方式将日志级别debug的日志写入到logger
  */
@@ -50,12 +52,16 @@
 /**
  * @brief 使用格式化方式将日志级别level的日志写入到logger
  */
+// #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
+//     if(logger->getLevel() <= level) \
+//         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
+//                         __FILE__, __LINE__, 0, 1234,\
+//                 0,time(0), "hello"))).getEvent()->format(fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
-                        __FILE__, __LINE__, 0, 1234,\
-                0,time(0), "hello"))).getEvent()->format(fmt, __VA_ARGS__)
-
+                        __FILE__, __LINE__, 0, sylar::GetThreadId(),\
+                sylar::Fiber::GetFiberId(), time(0), sylar::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 /**
  * @brief 使用格式化方式将日志级别debug的日志写入到logger
  */

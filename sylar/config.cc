@@ -61,6 +61,16 @@ void Config::LoadFromYaml(const YAML::Node& root) {
                 var->fromString(ss.str());
             }
         }
+        else
+        {
+            // if(i.second.IsScalar()) {
+            //     Lookup(key,i.second.Scalar());
+            // } else {
+            //     std::stringstream ss;
+            //     ss << i.second;
+            //     Lookup(key,ss.str());
+            // }
+        }
     }
 }
 

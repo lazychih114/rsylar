@@ -554,7 +554,7 @@ public:
     //     auto data = GetDatas();
     //     for(auto i:data)
     //     {
-    //         SYLAR_LOG_DEBUG(SYLAR_LOG_ROOT()) << i.first << " " << i.second->getName();
+    //         std::cout << i.first << " " << i.second->getName() << std::endl;
     //     }
     // }
 private:
