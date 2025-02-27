@@ -6,6 +6,8 @@
 #include "endian.h"
 #include "env.h"
 #include "fiber.h"
+#include "macro.h"
+#include "scheduler.h"
 #include "thread.h"
 
 #include "log.h"

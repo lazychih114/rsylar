@@ -2,7 +2,7 @@
 #include "config.h"
 #include "macro.h"
 #include "log.h"
-//#include "scheduler.h"
+#include "scheduler.h"
 #include <atomic>
 
 namespace sylar {
@@ -84,7 +84,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
 Fiber::~Fiber() {
     --s_fiber_count;
     if(m_ctx.uc_stack.ss_sp) {
-        SYLAR_LOG_DEBUG(g_logger) << "---------------"<< m_state << "---" << m_id;
+        //SYLAR_LOG_DEBUG(g_logger) << "---------------"<< m_state << "---" << m_id;
         SYLAR_ASSERT(m_state == TERM
                 || m_state == EXCEPT
                 || m_state == INIT);
@@ -140,20 +140,20 @@ void Fiber::back() {
 
 //切换到当前协程执行
 void Fiber::swapIn() {
-    // SetThis(this);
-    // SYLAR_ASSERT(m_state != EXEC);
-    // m_state = EXEC;
-    // if(swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
-    //     SYLAR_ASSERT2(false, "swapcontext");
-    // }
+    SetThis(this);
+    SYLAR_ASSERT(m_state != EXEC);
+    m_state = EXEC;
+    if(swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
+        SYLAR_ASSERT2(false, "swapcontext");
+    }
 }
 
 //切换到后台执行
 void Fiber::swapOut() {
-    // SetThis(Scheduler::GetMainFiber());
-    // if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
-    //     SYLAR_ASSERT2(false, "swapcontext");
-    // }
+    SetThis(Scheduler::GetMainFiber());
+    if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
+        SYLAR_ASSERT2(false, "swapcontext");
+    }
 }
 
 //设置当前协程
