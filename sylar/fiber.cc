@@ -12,6 +12,7 @@ static Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 static std::atomic<uint64_t> s_fiber_id {0};
 static std::atomic<uint64_t> s_fiber_count {0};
 
+//static thread_local uint64_t t_fiberid = 0;
 static thread_local Fiber* t_fiber = nullptr;
 static thread_local Fiber::ptr t_threadFiber = nullptr;
 
@@ -45,7 +46,8 @@ uint64_t Fiber::GetFiberId() {
 
 Fiber::Fiber() {
     m_state = EXEC;
-    SetThis(this);
+    //SetThis(this);
+
 
     if(getcontext(&m_ctx)) {
         SYLAR_ASSERT2(false, "getcontext");
@@ -60,7 +62,9 @@ Fiber::Fiber() {
 
 Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
     :m_id(++s_fiber_id)
-    ,m_cb(cb) {
+    ,m_cb(cb)
+    ,use_caller(use_caller) {
+    //SetThis(this);
     ++s_fiber_count;
     m_stacksize = stacksize ? stacksize : g_fiber_stack_size->getValue();
 
@@ -82,6 +86,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
 }
 
 Fiber::~Fiber() {
+    SetThis(this);
     --s_fiber_count;
     if(m_ctx.uc_stack.ss_sp) {
         //SYLAR_LOG_DEBUG(g_logger) << "---------------"<< m_state << "---" << m_id;
@@ -118,7 +123,10 @@ void Fiber::reset(std::function<void()> cb) {
     m_ctx.uc_stack.ss_sp = m_stack;
     m_ctx.uc_stack.ss_size = m_stacksize;
 
-    makecontext(&m_ctx, &Fiber::MainFunc, 0);
+    if(use_caller)
+        makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
+    else 
+        makecontext(&m_ctx, &Fiber::MainFunc, 0);
     m_state = INIT;
 }
 
@@ -155,6 +163,13 @@ void Fiber::swapOut() {
         SYLAR_ASSERT2(false, "swapcontext");
     }
 }
+
+void Fiber::PrintFiberInfo()
+{
+    SYLAR_LOG_DEBUG(g_logger) << "当前运行的协程id为 " << t_fiber->m_id;
+    SYLAR_LOG_DEBUG(g_logger) << "当前运行的协程返回的协程为 " << t_threadFiber->m_id;
+}
+
 
 //设置当前协程
 void Fiber::SetThis(Fiber* f) {
@@ -246,7 +261,8 @@ void Fiber::CallerMainFunc() {
 
     auto raw_ptr = cur.get();
     cur.reset();
-    raw_ptr->back();
+    //raw_ptr->back();
+    raw_ptr->swapOut();
     SYLAR_ASSERT2(false, "never reach fiber_id=" + std::to_string(raw_ptr->getId()));
 
 }

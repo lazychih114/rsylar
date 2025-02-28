@@ -97,6 +97,10 @@ public:
      */
     State getState() const { return m_state;}
 public:
+    /**
+     * @brief 打印当前线程运行的协程信息
+     */
+    static void PrintFiberInfo();
 
     /**
      * @brief 设置当前线程的运行协程
@@ -143,6 +147,8 @@ public:
      */
     static uint64_t GetFiberId();
 private:
+    /// 是否使用调度器
+    bool use_caller = false;
     /// 协程id
     uint64_t m_id = 0;
     /// 协程运行栈大小

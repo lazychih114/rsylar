@@ -77,8 +77,8 @@ void test_scheduler() {
 
     // 3. 性能压力测试（50000个任务）
     {
-        const int TASK_COUNT = 50000;
-        sylar::Scheduler sc(8, false);
+        const int TASK_COUNT = 500000;
+        sylar::Scheduler sc(4, true,"test");
         sc.start();
         
         std::atomic<int> counter{0};

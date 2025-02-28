@@ -25,8 +25,8 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name)
         //调度器
         t_scheduler = this;
 
-        //调度协程
-        m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
+        //主线程调度协程
+        m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this)));
         sylar::Thread::SetName(m_name);
 
         t_scheduler_fiber = m_rootFiber.get();
@@ -108,7 +108,7 @@ void Scheduler::stop() {
     if(m_rootFiber) {
         tickle();
     }
-
+    //主线程是否有调度协程
     if(m_rootFiber) {
         //while(!stopping()) {
         //    if(m_rootFiber->getState() == Fiber::TERM
@@ -150,7 +150,7 @@ void Scheduler::run() {
         t_scheduler_fiber = Fiber::GetThis().get();
     }
 
-    Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));
+    Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this),0,true));
     Fiber::ptr cb_fiber;
 
     FiberAndThread ft;
@@ -209,7 +209,7 @@ void Scheduler::run() {
             if(cb_fiber) {
                 cb_fiber->reset(ft.cb);
             } else {
-                cb_fiber.reset(new Fiber(ft.cb));
+                cb_fiber.reset(new Fiber(ft.cb,0,true));
             }
             ft.reset();
             cb_fiber->swapIn();
