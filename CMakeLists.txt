@@ -28,7 +28,7 @@ set(LIB_SRC
     sylar/scheduler.cc
     sylar/thread.cc
     sylar/util.cc
-
+    sylar/iomanager.cc
     )
 
 add_library(rsylar SHARED ${LIB_SRC})
@@ -47,6 +47,7 @@ rsylar_add_executable(test_log "tests/test_log.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_scheduler "tests/test_scheduler.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_scheduler1 "tests/test_scheduler1.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_thread "tests/test_thread.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_iomanager "tests/test_iomanager.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

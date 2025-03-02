@@ -61,10 +61,10 @@ Fiber::Fiber() {
 }
 
 Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
-    :m_id(++s_fiber_id)
-    ,m_cb(cb)
-    ,use_caller(use_caller) {
-    //SetThis(this);
+    :use_caller(use_caller)
+    ,m_id(++s_fiber_id)
+    ,m_cb(cb) {
+    SetThis(this);
     ++s_fiber_count;
     m_stacksize = stacksize ? stacksize : g_fiber_stack_size->getValue();
 
