@@ -165,6 +165,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
 
     FdContext::MutexType::Lock lock2(fd_ctx->mutex);
     if(SYLAR_UNLIKELY(fd_ctx->events & event)) {
+        //小概率成立
         SYLAR_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
                     << " event=" << (EPOLL_EVENTS)event
                     << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
@@ -326,12 +327,12 @@ void IOManager::tickle() {
 }
 
 bool IOManager::stopping(uint64_t& timeout) {
-    //timeout = getNextTimer();
-    // return timeout == 0ull
-    //     && m_pendingEventCount == 0
-    //     && Scheduler::stopping();
-    return m_pendingEventCount == 0
+    timeout = getNextTimer();
+    return timeout == ~0ull
+        && m_pendingEventCount == 0
         && Scheduler::stopping();
+    // return m_pendingEventCount == 0
+    //     && Scheduler::stopping();
 
 }
 
@@ -349,7 +350,7 @@ void IOManager::idle() {
     });
 
     while(true) {
-        uint64_t next_timeout = 1000;
+        uint64_t next_timeout = 0;
         if(SYLAR_UNLIKELY(stopping(next_timeout))) {
             SYLAR_LOG_INFO(g_logger) << "name=" << getName()
                                      << " idle stopping exit";
@@ -373,7 +374,7 @@ void IOManager::idle() {
         } while(true);
 
         std::vector<std::function<void()> > cbs;
-        //listExpiredCb(cbs);
+        listExpiredCb(cbs);
         if(!cbs.empty()) {
             //SYLAR_LOG_DEBUG(g_logger) << "on timer cbs.size=" << cbs.size();
             schedule(cbs.begin(), cbs.end());
@@ -440,8 +441,8 @@ void IOManager::idle() {
     }
 }
 
-// void IOManager::onTimerInsertedAtFront() {
-//     tickle();
-// }
+void IOManager::onTimerInsertedAtFront() {
+    tickle();
+}
 
 }

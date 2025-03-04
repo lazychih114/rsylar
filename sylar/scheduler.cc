@@ -1,4 +1,4 @@
-//#include "hook.h"
+#include "hook.h"
 #include "log.h"
 #include "macro.h"
 #include "scheduler.h"
@@ -143,7 +143,7 @@ void Scheduler::setThis() {
 
 void Scheduler::run() {
     SYLAR_LOG_DEBUG(g_logger) << m_name << " run";
-    //set_hook_enable(true);
+    set_hook_enable(true);
     setThis();
     if(sylar::GetThreadId() != m_rootThread) {
         //如果线程不是主线程，那么就得初始化自己的主协程并作为调度协程

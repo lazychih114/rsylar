@@ -64,7 +64,7 @@ void test1() {
     std::cout << "EPOLLIN=" << EPOLLIN
               << " EPOLLOUT=" << EPOLLOUT << std::endl;
     sylar::IOManager iom(2, false,"test");
-    for(int i=0;i<1000;i++)
+    for(int i=0;i<10;i++)
     {
         iom.schedule(&test_fiber);
     }
@@ -73,22 +73,22 @@ void test1() {
     iom.stop();
 }
 
-// sylar::Timer::ptr s_timer;
-// void test_timer() {
-//     sylar::IOManager iom(2);
-//     s_timer = iom.addTimer(1000, [](){
-//         static int i = 0;
-//         SYLAR_LOG_INFO(g_logger) << "hello timer i=" << i;
-//         if(++i == 3) {
-//             s_timer->reset(2000, true);
-//             //s_timer->cancel();
-//         }
-//     }, true);
-// }
+sylar::Timer::ptr s_timer;
+void test_timer() {
+    sylar::IOManager iom(2,false,"test");
+    s_timer = iom.addTimer(10, [](){
+        static int i = 0;
+        SYLAR_LOG_INFO(g_logger) << "hello timer i=" << i;
+        if(++i == 3) {
+            s_timer->reset(20, true);
+            //s_timer->cancel();
+        }
+    }, false);
+}
 
 int main(int argc, char** argv) {
     sylar::Thread::SetName("main");
     test1();
-    //test_timer();
+    test_timer();
     return 0;
 }

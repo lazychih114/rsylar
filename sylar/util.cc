@@ -1,6 +1,7 @@
 #include "util.h"
 #include <execinfo.h>
-#include <sys/time.h>
+//#include <sys/time.h>
+#include <time.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
@@ -68,15 +69,19 @@ std::string BacktraceToString(int size, int skip, const std::string& prefix) {
 }
 
 uint64_t GetCurrentMS() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000ul  + tv.tv_usec / 1000;
+    //struct timeval tv;
+    struct timespec tv;
+    //gettimeofday(&tv, NULL);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tv);
+    return tv.tv_sec * 1000ul  + tv.tv_nsec / 1000000;
 }
 
 uint64_t GetCurrentUS() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000 * 1000ul  + tv.tv_usec;
+    //struct timeval tv;
+    struct timespec tv;
+    //gettimeofday(&tv, NULL);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tv);
+    return tv.tv_sec * 1000 * 1000ul  + tv.tv_nsec/1000;
 }
 
 std::string Time2Str(time_t ts, const std::string& format) {
