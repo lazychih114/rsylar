@@ -4,7 +4,6 @@
 #include "log.h"
 #include "scheduler.h"
 #include <atomic>
-
 namespace sylar {
 
 static Logger::ptr g_logger = SYLAR_LOG_NAME("system");
