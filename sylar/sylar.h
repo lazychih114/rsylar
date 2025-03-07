@@ -11,6 +11,7 @@
 #include "iomanager.h"
 #include "macro.h"
 #include "scheduler.h"
+#include "socket.h"
 #include "thread.h"
 #include "timer.h"
 

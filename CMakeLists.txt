@@ -19,6 +19,12 @@ endif()
 
 include_directories(.)
 
+find_package(OpenSSL REQUIRED)
+if(OPENSSL_FOUND)
+    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+
 set(LIB_SRC
     sylar/address.cc
     sylar/config.cc
@@ -29,10 +35,15 @@ set(LIB_SRC
     sylar/log.cc
     sylar/mutex.cc
     sylar/scheduler.cc
+    sylar/socket.cc
     sylar/thread.cc
     sylar/timer.cc
     sylar/util.cc
+    # sylar/util/crypto_util.cc
+    sylar/util/json_util.cc
+    # sylar/util/hash_util.cc
     sylar/iomanager.cc
+
     )
 
 add_library(rsylar SHARED ${LIB_SRC})
@@ -41,6 +52,10 @@ force_redefine_file_macro_for_sources(rsylar)
 set(LIBS
         rsylar
         yaml-cpp
+        jsoncpp
+        #${ZLIB_LIBRARIES}
+        ${OPENSSL_LIBRARIES}
+        #${PROTOBUF_LIBRARIES}
         )
 
 
@@ -54,6 +69,7 @@ rsylar_add_executable(test_thread "tests/test_thread.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_iomanager "tests/test_iomanager.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_hook "tests/test_hook.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_address "tests/test_address.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_socket "tests/test_socket.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
