@@ -27,6 +27,7 @@ endif()
 
 set(LIB_SRC
     sylar/address.cc
+    sylar/bytearray.cc
     sylar/config.cc
     sylar/env.cc
     sylar/fd_manager.cc
@@ -70,6 +71,7 @@ rsylar_add_executable(test_iomanager "tests/test_iomanager.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_hook "tests/test_hook.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_address "tests/test_address.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_socket "tests/test_socket.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_bytearray "tests/test_bytearray.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
