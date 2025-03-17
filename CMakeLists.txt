@@ -34,13 +34,15 @@ set(LIB_SRC
     sylar/fiber.cc
     sylar/hook.cc
     sylar/http/http.cc
+    sylar/http/parser11/http11_parser.rl.cc
+    sylar/http/parser11/httpclient_parser.rl.cc
     # sylar/http/http_connection.cc
-    # sylar/http/http_parser.cc
-    # sylar/http/http_session.cc
-    # sylar/http/http_server.cc
-    # sylar/http/servlet.cc
-    # sylar/http/servlets/config_servlet.cc
-    # sylar/http/servlets/status_servlet.cc
+    sylar/http/http_parser.cc
+    sylar/http/http_session.cc
+    sylar/http/http_server.cc
+    sylar/http/servlet.cc
+    #sylar/http/servlets/config_servlet.cc
+    #sylar/http/servlets/status_servlet.cc
     # sylar/http/session_data.cc
     sylar/log.cc
     sylar/mutex.cc
@@ -86,6 +88,8 @@ rsylar_add_executable(test_socket "tests/test_socket.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_bytearray "tests/test_bytearray.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_tcp_server "tests/test_tcp_server.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_http "tests/test_http.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_http_parser "tests/test_http_parser.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_http_server "tests/test_http_server.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
