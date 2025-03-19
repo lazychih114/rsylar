@@ -63,8 +63,8 @@ void test_fiber() {
 void test1() {
     std::cout << "EPOLLIN=" << EPOLLIN
               << " EPOLLOUT=" << EPOLLOUT << std::endl;
-    sylar::IOManager iom(2, false,"test");
-    for(int i=0;i<10;i++)
+    sylar::IOManager iom(2, true,"test");
+    for(int i=0;i<100;i++)
     {
         iom.schedule(&test_fiber);
     }

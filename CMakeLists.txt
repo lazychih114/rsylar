@@ -8,6 +8,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
+# -fno-omit-frame-pointer -fsanitize=thread
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # 对于 Clang，使用 -fstandalone-debug
@@ -90,6 +91,7 @@ rsylar_add_executable(test_tcp_server "tests/test_tcp_server.cc" rsylar "${LIBS}
 rsylar_add_executable(test_http "tests/test_http.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_http_parser "tests/test_http_parser.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_http_server "tests/test_http_server.cc" rsylar "${LIBS}")
+rsylar_add_executable(my_http_server "tests/my_http_server.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

@@ -15,6 +15,7 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name)
     :m_name(name) {
     SYLAR_ASSERT(threads > 0);
 
+    sylar::Thread::SetName(m_name);
     //本线程是否也参与协程调度
     if(use_caller) {
         //创建、获取主协程
@@ -27,7 +28,6 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name)
 
         //主线程调度协程
         m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this)));
-        sylar::Thread::SetName(m_name);
 
         t_scheduler_fiber = m_rootFiber.get();
         m_rootThread = sylar::GetThreadId();
@@ -69,13 +69,13 @@ void Scheduler::start() {
                             , m_name + "_" + std::to_string(i)));
         m_threadIds.push_back(m_threads[i]->getId());
     }
-    //lock.unlock();
+    lock.unlock();
 
-    //if(m_rootFiber) {
+    // if(m_rootFiber) {
     //    //m_rootFiber->swapIn();
     //    m_rootFiber->call();
     //    SYLAR_LOG_INFO(g_logger) << "call out " << m_rootFiber->getState();
-    //}
+    // }
 }
 
 void Scheduler::stop() {

@@ -158,6 +158,8 @@ void Fiber::swapIn() {
 //切换到后台执行
 void Fiber::swapOut() {
     SetThis(Scheduler::GetMainFiber());
+    // if(m_state != HOLD&&m_state != TERM) SYLAR_LOG_ERROR(g_logger) << m_state;
+    // if(m_state == EXEC) m_state = HOLD;
     if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
         SYLAR_ASSERT2(false, "swapcontext");
     }

@@ -78,9 +78,9 @@ void IOManager::FdContext::resetContext(EventContext& ctx) {
 }
 
 void IOManager::FdContext::triggerEvent(IOManager::Event event) {
-    //SYLAR_LOG_INFO(g_logger) << "fd=" << fd
-    //    << " triggerEvent event=" << event
-    //    << " events=" << events;
+    SYLAR_LOG_INFO(g_logger) << "fd=" << fd
+       << " triggerEvent event=" << event
+       << " events=" << events;
     SYLAR_ASSERT(events & event);
     //if(SYLAR_UNLIKELY(!(event & event))) {
     //    return;
@@ -123,6 +123,7 @@ IOManager::IOManager(size_t threads, bool use_caller, const std::string& name)
     contextResize(32);
 
     start();
+    SYLAR_LOG_DEBUG(g_logger) << "IOManager::IOManager name=" << name;
 }
 
 IOManager::~IOManager() {
@@ -166,6 +167,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     FdContext::MutexType::Lock lock2(fd_ctx->mutex);
     if(SYLAR_UNLIKELY(fd_ctx->events & event)) {
         //小概率成立
+        //return -1;
         SYLAR_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
                     << " event=" << (EPOLL_EVENTS)event
                     << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
@@ -202,8 +204,9 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     } else {
         //没有回调函数就执行默认协程
         event_ctx.fiber = Fiber::GetThis();
+        //return -1;
         SYLAR_ASSERT2(event_ctx.fiber->getState() == Fiber::EXEC
-                      ,"state=" << event_ctx.fiber->getState());
+                      ,"state=" << event_ctx.fiber->getState() << " fd=" << fd);
     }
     return 0;
 }
@@ -358,7 +361,7 @@ void IOManager::idle() {
         }
         int rt = 0;
         do {
-            static const int MAX_TIMEOUT = 3000;
+            static const int MAX_TIMEOUT = 1000;
             if(next_timeout != ~0ull) {
                 next_timeout = (int)next_timeout > MAX_TIMEOUT
                                 ? MAX_TIMEOUT : next_timeout;

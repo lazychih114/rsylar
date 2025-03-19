@@ -22,10 +22,12 @@ TcpServer::TcpServer(sylar::IOManager* worker,
 }
 
 TcpServer::~TcpServer() {
+    SYLAR_LOG_ERROR(g_logger) << "TcpServer::~TcpServer";
     for(auto& i : m_socks) {
         i->close();
     }
     m_socks.clear();
+    
 }
 
 void TcpServer::setConf(const TcpServerConf& v) {
