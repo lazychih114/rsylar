@@ -135,8 +135,8 @@ retry:
         }
         //加入事件监听
         //if (n!=-1) std::cout << n << " "<< fd << hook_fun_name << std::endl; 
-        if(fd==6) 
-            SYLAR_LOG_ERROR(g_logger) <<sylar::Fiber::GetThis()->getId()<<" "<< sylar::Fiber::GetThis()->getState() <<" "<< &sylar::Fiber::GetThis()->m_state;
+        // if(fd==6) 
+        //     SYLAR_LOG_ERROR(g_logger) <<sylar::Fiber::GetThis()->getId()<<" "<< sylar::Fiber::GetThis()->getState() <<" "<< &sylar::Fiber::GetThis()->m_state;
         int rt = iom->addEvent(fd, (sylar::IOManager::Event)(event));
         if(SYLAR_UNLIKELY(rt)) {
             SYLAR_LOG_ERROR(g_logger) << hook_fun_name << " addEvent("
@@ -148,8 +148,8 @@ retry:
         } else {
             //切给调度协程
             sylar::Fiber::YieldToHold();
-            if(fd==6) 
-                SYLAR_LOG_ERROR(g_logger) << "call back";
+            // if(fd==6) 
+            //     SYLAR_LOG_ERROR(g_logger) << "call back";
             if(timer) {
                 timer->cancel();
             }
