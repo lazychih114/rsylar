@@ -5,8 +5,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include (cmake/utils.cmake)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
 # -fno-omit-frame-pointer -fsanitize=thread
 
@@ -30,6 +30,7 @@ set(LIB_SRC
     sylar/address.cc
     sylar/bytearray.cc
     sylar/config.cc
+    sylar/daemon.cc
     sylar/env.cc
     sylar/fd_manager.cc
     sylar/fiber.cc
@@ -91,6 +92,7 @@ rsylar_add_executable(test_tcp_server "tests/test_tcp_server.cc" rsylar "${LIBS}
 rsylar_add_executable(test_http "tests/test_http.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_http_parser "tests/test_http_parser.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_http_server "tests/test_http_server.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_daemon "tests/test_daemon.cc" rsylar "${LIBS}")
 rsylar_add_executable(my_http_server "tests/my_http_server.cc" rsylar "${LIBS}")
 
 
