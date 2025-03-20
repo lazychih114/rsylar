@@ -146,7 +146,6 @@ public:
      * @brief 获取当前协程的id
      */
     static uint64_t GetFiberId();
-    State m_state = INIT;
 private:
     /// 是否使用调度器
     bool use_caller = false;
@@ -155,7 +154,7 @@ private:
     /// 协程运行栈大小
     uint32_t m_stacksize = 0;
     /// 协程状态
-    //State m_state = INIT;
+    State m_state = INIT;
     /// 协程上下文
     ucontext_t m_ctx;
     /// 协程运行栈指针

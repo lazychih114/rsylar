@@ -11,7 +11,7 @@ void run() {
         return;
     }
 
-    //sylar::http::HttpServer::ptr http_server(new sylar::http::HttpServer(true, worker.get(),worker.get()));
+    //sylar::http::HttpServer::ptr http_server(new sylar::http::HttpServer(true, worker.get()));
     sylar::http::HttpServer::ptr http_server(new sylar::http::HttpServer(true));
     bool ssl = false;
     while(!http_server->bind(addr, ssl)) {
@@ -29,7 +29,7 @@ void run() {
 
 int main(int argc, char** argv) {
     // sylar::Thread::SetName("main");
-    sylar::IOManager iom(2,true,"iom");
+    sylar::IOManager iom(3,true,"iom");
     //sylar::IOManager iom(1);
     //worker.reset(new sylar::IOManager(3, false, "worker"));
     iom.schedule(run);

@@ -8,7 +8,9 @@ namespace sylar {
 
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 
+//调度器
 static thread_local Scheduler* t_scheduler = nullptr;
+//调度协程
 static thread_local Fiber* t_scheduler_fiber = nullptr;
 
 Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name)
