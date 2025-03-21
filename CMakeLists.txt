@@ -7,7 +7,7 @@ include (cmake/utils.cmake)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-
+enable_language(ASM)
 # -fno-omit-frame-pointer -fsanitize=thread
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -47,6 +47,9 @@ set(LIB_SRC
     #sylar/http/servlets/status_servlet.cc
     # sylar/http/session_data.cc
     sylar/log.cc
+    sylar/libco/coctx.h
+    sylar/libco/coctx.cpp
+    sylar/libco/coctx_swap.S
     sylar/mutex.cc
     sylar/scheduler.cc
     sylar/socket.cc

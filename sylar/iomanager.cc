@@ -440,7 +440,7 @@ void IOManager::idle() {
         auto raw_ptr = cur.get();
         cur.reset();
 
-        raw_ptr->swapOut();
+        raw_ptr->yield();
     }
 }
 

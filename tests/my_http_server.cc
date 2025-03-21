@@ -29,7 +29,7 @@ void run() {
 
 int main(int argc, char** argv) {
     // sylar::Thread::SetName("main");
-    sylar::IOManager iom(4,false,"iom");
+    sylar::IOManager iom(8,false,"iom");
     //sylar::IOManager iom(1);
     //worker.reset(new sylar::IOManager(3, false, "worker"));
     iom.schedule(run);

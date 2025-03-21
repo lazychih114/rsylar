@@ -122,7 +122,7 @@ void Scheduler::stop() {
         //    m_rootFiber->call();
         //}
         if(!stopping()) {
-            m_rootFiber->call();
+            m_rootFiber->resume();
         }
     }
 
@@ -196,7 +196,7 @@ void Scheduler::run() {
         //协程任务
         if(ft.fiber && (ft.fiber->getState() != Fiber::TERM
                         && ft.fiber->getState() != Fiber::EXCEPT)) {
-            ft.fiber->swapIn();
+            ft.fiber->resume();
             --m_activeThreadCount;
 
             if(ft.fiber->getState() == Fiber::READY) {
@@ -214,7 +214,7 @@ void Scheduler::run() {
                 cb_fiber.reset(new Fiber(ft.cb,0,true));
             }
             ft.reset();
-            cb_fiber->swapIn();
+            cb_fiber->resume();
             --m_activeThreadCount;
             if(cb_fiber->getState() == Fiber::READY) {
                 schedule(cb_fiber);
@@ -237,7 +237,7 @@ void Scheduler::run() {
             }
 
             ++m_idleThreadCount;
-            idle_fiber->swapIn();
+            idle_fiber->resume();
             --m_idleThreadCount;
             if(idle_fiber->getState() != Fiber::TERM
                     && idle_fiber->getState() != Fiber::EXCEPT) {
@@ -260,7 +260,7 @@ bool Scheduler::stopping() {
 void Scheduler::idle() {
     SYLAR_LOG_INFO(g_logger) << "idle";
     while(!stopping()) {
-        sylar::Fiber::YieldToHold();
+        sylar::Fiber::GetThis()->yield();
     }
 }
 
@@ -272,7 +272,7 @@ void Scheduler::switchTo(int thread) {
         }
     }
     schedule(Fiber::GetThis(), thread);
-    Fiber::YieldToHold();
+    sylar::Fiber::GetThis()->yield();
 }
 
 std::ostream& Scheduler::dump(std::ostream& os) {

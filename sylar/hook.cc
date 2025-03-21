@@ -147,7 +147,7 @@ retry:
             return -1;
         } else {
             //切给调度协程
-            sylar::Fiber::YieldToHold();
+            sylar::Fiber::GetThis()->yield();
             // if(fd==6) 
             //     SYLAR_LOG_ERROR(g_logger) << "call back";
             if(timer) {
@@ -184,7 +184,7 @@ unsigned int sleep(unsigned int seconds) {
         iom->schedule(fiber,-1);
     });
     //         std::bind(&sylar::IOManager::schedule,iom, fiber, -1));
-    sylar::Fiber::YieldToHold();
+    sylar::Fiber::GetThis()->yield();
     return 0;
 }
 
@@ -200,7 +200,7 @@ int usleep(useconds_t usec) {
     iom->addTimer(usec / 1000, [iom,fiber](){
         iom->schedule(fiber,-1);
     });
-    sylar::Fiber::YieldToHold();
+    sylar::Fiber::GetThis()->yield();
     return 0;
 }
 
@@ -218,7 +218,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem) {
     iom->addTimer(timeout_ms, [iom,fiber](){
         iom->schedule(fiber,-1);
     });
-    sylar::Fiber::YieldToHold();
+    sylar::Fiber::GetThis()->yield();
     return 0;
 }
 
@@ -280,7 +280,7 @@ int connect_with_timeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
 
     int rt = iom->addEvent(fd, sylar::IOManager::WRITE);
     if(rt == 0) {
-        sylar::Fiber::YieldToHold();
+        sylar::Fiber::GetThis()->yield();
         if(timer) {
             timer->cancel();
         }

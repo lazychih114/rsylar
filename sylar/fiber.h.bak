@@ -3,7 +3,8 @@
 
 #include <memory>
 #include <functional>
-#include "libco/coctx.h"
+#include <ucontext.h>
+
 namespace sylar {
 
 class Scheduler;
@@ -62,17 +63,29 @@ public:
     void reset(std::function<void()> cb);
 
     /**
-     * @brief 唤醒当前协程
+     * @brief 将当前协程切换到运行状态
+     * @pre getState() != EXEC
+     * @post getState() = EXEC
+     */
+    void swapIn();
+
+    /**
+     * @brief 将当前协程切换到后台
+     */
+    void swapOut();
+
+    /**
+     * @brief 将当前线程切换到执行状态
      * @pre 执行的为当前线程的主协程
      */
-    void resume();
+    void call();
 
     /**
      * @brief 将当前线程切换到后台
      * @pre 执行的为该协程
      * @post 返回到线程的主协程
      */
-    void yield();
+    void back();
 
     /**
      * @brief 返回协程id
@@ -100,6 +113,17 @@ public:
      */
     static Fiber::ptr GetThis();
 
+    /**
+     * @brief 将当前协程切换到后台,并设置为READY状态
+     * @post getState() = READY
+     */
+    static void YieldToReady();
+
+    /**
+     * @brief 将当前协程切换到前台,并设置为HOLD状态
+     * @post getState() = HOLD
+     */
+    static void YieldToHold();
 
     /**
      * @brief 返回当前协程的总数量
@@ -108,9 +132,15 @@ public:
 
     /**
      * @brief 协程执行函数
+     * @post 执行完成返回到线程主协程
      */
-    static void * run(void *, void *);
+    static void MainFunc();
 
+    /**
+     * @brief 协程执行函数
+     * @post 执行完成返回到线程调度协程
+     */
+    static void CallerMainFunc();
 
     /**
      * @brief 获取当前协程的id
@@ -127,7 +157,7 @@ private:
     /// 协程状态
     //State m_state = INIT;
     /// 协程上下文
-    coctx_t m_ctx;
+    ucontext_t m_ctx;
     /// 协程运行栈指针
     void* m_stack = nullptr;
     /// 协程运行函数
