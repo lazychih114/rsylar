@@ -15,7 +15,7 @@
 #include <yaml-cpp/yaml.h>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
-#include <google/protobuf/message.h>
+//#include <google/protobuf/message.h>
 // #include "sylar/util/hash_util.h"
 #include "sylar/util/json_util.h"
 // #include "sylar/util/crypto_util.h"
@@ -297,7 +297,7 @@ const char* TypeToName() {
     return s_name;
 }
 
-std::string PBToJsonString(const google::protobuf::Message& message);
+//std::string PBToJsonString(const google::protobuf::Message& message);
 
 template<class Iter>
 std::string Join(Iter begin, Iter end, const std::string& tag) {
