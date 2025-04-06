@@ -384,7 +384,7 @@ void IOManager::idle() {
             cbs.clear();
         }
 
-        SYLAR_LOG_INFO(g_logger) << "next_time=" << next_timeout;
+        SYLAR_LOG_DEBUG(g_logger) << "next_time=" << next_timeout;
         
 
         for(int i = 0; i < rt; ++i) {

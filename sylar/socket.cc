@@ -496,9 +496,12 @@ Socket::ptr SSLSocket::accept() {
         return nullptr;
     }
     sock->m_ctx = m_ctx;
+    
     if(sock->init(newsock)) {
         return sock;
     }
+    SYLAR_LOG_INFO(g_logger) << "accept(" << *sock << ") errno="
+            << errno << " errstr=" << strerror(errno);
     return nullptr;
 }
 
@@ -597,9 +600,21 @@ int SSLSocket::recvFrom(iovec* buffers, size_t length, Address::ptr from, int fl
 
 bool SSLSocket::init(int sock) {
     bool v = Socket::init(sock);
+    SYLAR_LOG_ERROR(g_logger) << "ssl init " << v ; 
     if(v) {
         m_ssl.reset(SSL_new(m_ctx.get()),  SSL_free);
         SSL_set_fd(m_ssl.get(), m_sock);
+        int ret = SSL_accept(m_ssl.get());
+        if (ret <= 0) {
+        int err = SSL_get_error(m_ssl.get(), ret);
+        if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+            // 非阻塞模式下需等待重试
+            SYLAR_LOG_INFO(g_logger) << "SSL_ERROR_WANT_READ";
+        } else {
+            // 处理致命错误
+            SYLAR_LOG_INFO(g_logger) << "SSL_accept error " << err;
+        }
+}
         v = (SSL_accept(m_ssl.get()) == 1);
     }
     return v;
