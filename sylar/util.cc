@@ -1,6 +1,7 @@
 #include "util.h"
 #include <execinfo.h>
 #include <time.h>
+#include <sys/time.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>

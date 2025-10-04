@@ -21,7 +21,7 @@ void run() {
         sleep(1);
     }
     if(ssl) {
-        http_server->loadCertificates("/root/rsylar/bin/ssl/localhost.crt", "/root/rsylar/bin/ssl/localhost.key");
+        http_server->loadCertificates("/home/reversedog/projects/rsylar/bin/ssl/localhost.crt", "/home/reversedog/projects/rsylar/bin/ssl/localhost.key");
     }
 
     

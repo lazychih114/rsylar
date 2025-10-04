@@ -30,6 +30,9 @@ struct coctx_t
 {
 #if defined(__i386__)
 	void *regs[ 8 ];
+#elif defined(__x86_64__)
+	/* x86_64 needs enough slots to store r15..rsp (indices up to kRSP==13) */
+	void *regs[ 14 ];
 #elif defined(__aarch64__)
 	void *regs[ 32 ];
 #endif
