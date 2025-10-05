@@ -600,7 +600,7 @@ int SSLSocket::recvFrom(iovec* buffers, size_t length, Address::ptr from, int fl
 
 bool SSLSocket::init(int sock) {
     bool v = Socket::init(sock);
-    SYLAR_LOG_ERROR(g_logger) << "ssl init " << v ; 
+    SYLAR_LOG_INFO(g_logger) << "ssl init " << v ; 
     if(v) {
         m_ssl.reset(SSL_new(m_ctx.get()),  SSL_free);
         SSL_set_fd(m_ssl.get(), m_sock);

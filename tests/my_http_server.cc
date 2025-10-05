@@ -21,7 +21,7 @@ void run() {
         sleep(1);
     }
     if(ssl) {
-        http_server->loadCertificates("/home/reversedog/projects/rsylar/bin/ssl/localhost.crt", "/home/reversedog/projects/rsylar/bin/ssl/localhost.key");
+        http_server->loadCertificates("/home/reversedog/projects/sylar/rsylar/bin/ssl/localhost.crt", "/home/reversedog/projects/sylar/rsylar/bin/ssl/localhost.key");
     }
 
     
@@ -60,7 +60,7 @@ void run() {
             return 0;
     });
     http_server->start();
-    SYLAR_LOG_ERROR(g_logger) << "等待停止";
+    SYLAR_LOG_INFO(g_logger) << "等待停止";
 }
 
 int main(int argc, char** argv) {
