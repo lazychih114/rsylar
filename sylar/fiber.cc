@@ -11,7 +11,6 @@ static Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 static std::atomic<uint64_t> s_fiber_id {0};
 static std::atomic<uint64_t> s_fiber_count {0};
 
-//static thread_local uint64_t t_fiberid = 0;
 static thread_local Fiber* t_fiber = nullptr;
 static thread_local Fiber::ptr t_threadFiber = nullptr;
 
@@ -21,7 +20,6 @@ static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
 class MallocStackAllocator {
 public:
     static void* Alloc(size_t size) {
-        //return malloc(size);
         void* ptr = malloc(size);
         SYLAR_LOG_DEBUG(g_logger) << "Alloc stack memory: " << ptr << ", size: " << size;
         return ptr;
@@ -45,8 +43,16 @@ uint64_t Fiber::GetFiberId() {
 
 Fiber::Fiber() {
     m_state = EXEC;
-
+    #if defined(LIBCO)
     coctx_init(&m_ctx); 
+    #elif defined(UCONTEXT)
+    if(getcontext(&m_ctx)) {
+        SYLAR_ASSERT2(false, "getcontext");
+    }
+    m_ctx.uc_link = nullptr;
+    m_ctx.uc_stack.ss_sp=nullptr;
+    m_ctx.uc_stack.ss_size = m_stacksize;
+    #endif
     ++s_fiber_count;
 
     SYLAR_LOG_DEBUG(g_logger) << "Fiber::Fiber main";
@@ -61,42 +67,45 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
     m_stacksize = stacksize ? stacksize : g_fiber_stack_size->getValue();
 
     m_stack = StackAllocator::Alloc(m_stacksize);
-    
+
+    #if defined(LIBCO)
     if(coctx_init(&m_ctx)) {
         SYLAR_ASSERT2(false, "getcontext");
     }
     m_ctx.ss_size = m_stacksize;
     m_ctx.ss_sp = (char*)m_stack;
-    // m_ctx.uc_link = nullptr;
-    // m_ctx.uc_stack.ss_sp = m_stack;
-    // m_ctx.uc_stack.ss_size = m_stacksize;
 
-    // coctx_make(&m_ctx, 
-    //     (use_caller ? &Fiber::CallerMainFunc : &Fiber::MainFunc), 
-    //     this, nullptr);
-
-    SYLAR_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
-    if(!use_caller) {
-        //makecontext(&m_ctx, &Fiber::MainFunc, 0);
-        //typedef void* (*coctx_pfn_t)( void* s, void* s2 );
-        coctx_make(&m_ctx,this->run, nullptr, nullptr);
-    } else {
-        //makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
-        coctx_make(&m_ctx,this->run, nullptr, nullptr);
+    coctx_make(&m_ctx,this->run, nullptr, nullptr);
+    #elif defined(UCONTEXT)
+    if(getcontext(&m_ctx)) {
+        SYLAR_ASSERT2(false, "getcontext");
     }
+    m_ctx.uc_link = nullptr;
+    m_ctx.uc_stack.ss_sp = m_stack;
+    m_ctx.uc_stack.ss_size = m_stacksize;
 
+    makecontext(&m_ctx, &Fiber::run, 0);
+    #endif
     SYLAR_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
 }
 
 Fiber::~Fiber() {
     SetThis(this);
     --s_fiber_count;
+    #if defined(LIBCO)
     if(m_ctx.ss_sp) {
-        //SYLAR_LOG_DEBUG(g_logger) << "---------------"<< m_state << "---" << m_id;
         SYLAR_ASSERT(m_state == TERM
                 || m_state == EXCEPT
                 || m_state == INIT);
         StackAllocator::Dealloc(m_ctx.ss_sp, m_ctx.ss_size);
+    #elif defined(UCONTEXT)
+    if(m_ctx.uc_stack.ss_sp) {
+        //SYLAR_LOG_DEBUG(g_logger) << "---------------"<< m_state << "---" << m_id;
+        SYLAR_ASSERT(m_state == TERM
+                || m_state == EXCEPT
+                || m_state == INIT);
+        StackAllocator::Dealloc(m_ctx.uc_stack.ss_sp, m_ctx.uc_stack.ss_size);
+    #endif
     } else {
         SYLAR_ASSERT(!m_cb);
         SYLAR_ASSERT(m_state == EXEC);
@@ -118,15 +127,19 @@ void Fiber::reset(std::function<void()> cb) {
             || m_state == EXCEPT
             || m_state == INIT);
     m_cb = cb;
-
-    if(!use_caller) {
-        //makecontext(&m_ctx, &Fiber::MainFunc, 0);
-        //typedef void* (*coctx_pfn_t)( void* s, void* s2 );
-        coctx_make(&m_ctx,this->run, nullptr, nullptr);
-    } else {
-        //makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
-        coctx_make(&m_ctx,this->run, nullptr, nullptr);
+    #if defined(LIBCO)
+    coctx_make(&m_ctx,this->run, nullptr, nullptr);
+    #elif defined(UCONTEXT)
+    if(getcontext(&m_ctx)) {
+        SYLAR_ASSERT2(false, "getcontext");
     }
+
+    m_ctx.uc_link = nullptr;
+    m_ctx.uc_stack.ss_sp = m_stack;
+    m_ctx.uc_stack.ss_size = m_stacksize;
+
+    makecontext(&m_ctx, &Fiber::run, 0);
+    #endif
 
     m_state = INIT;
 }
@@ -138,21 +151,29 @@ void Fiber::resume() {
 
     SYLAR_ASSERT(m_state != EXEC);
     m_state = EXEC;
+    #if defined(LIBCO)
     if(use_caller)
         coctx_swap(&Scheduler::GetMainFiber()->m_ctx, &m_ctx);
     else
         coctx_swap(&t_threadFiber->m_ctx, &m_ctx);
-    // if(coctx_swap(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
-    //     SYLAR_ASSERT2(false, "swapcontext");
-    // }
+    #elif defined(UCONTEXT)
+    if(use_caller) {
+        //如果是主协程，则切换到当前协程
+        if(swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
+            SYLAR_ASSERT2(false, "swapcontext");
+        }
+    } else {
+        //如果是普通协程，则切换到当前协程
+        if(swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
+            SYLAR_ASSERT2(false, "swapcontext");
+        }
+    }
+    #endif
 }
 
 //切换到后台执行
 void Fiber::yield() {
-    // auto cur = GetThis().get();
-    //SYLAR_ASSERT(m_state == EXEC);
-    // if(m_state != HOLD&&m_state != TERM) SYLAR_LOG_ERROR(g_logger) << m_state;
-    // if(m_state == EXEC) m_state = HOLD;
+    #if defined(LIBCO)
     if(use_caller){
         SetThis(Scheduler::GetMainFiber());
         coctx_swap(&m_ctx, &Scheduler::GetMainFiber()->m_ctx);
@@ -162,6 +183,18 @@ void Fiber::yield() {
         if(m_state!=TERM) m_state = READY;
         coctx_swap(&m_ctx, &t_threadFiber->m_ctx);
     }
+    #elif defined(UCONTEXT)
+    if(use_caller) {
+        //如果是主协程，则切换到当前协程
+        SetThis(Scheduler::GetMainFiber());
+        swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx);
+    } else {
+        //如果是普通协程，则切换到当前协程
+        SetThis(t_threadFiber.get());
+        if(m_state!=TERM) m_state = READY;
+        swapcontext(&m_ctx, &t_threadFiber->m_ctx);
+    }
+    #endif
 }
 
 void Fiber::PrintFiberInfo()
@@ -193,7 +226,7 @@ Fiber::ptr Fiber::GetThis() {
 uint64_t Fiber::TotalFibers() {
     return s_fiber_count;
 }
-void* Fiber::run(void* a,void* b) {
+void Fiber::run() {
     Fiber::ptr cur = GetThis();
     SYLAR_ASSERT(cur);
     try {

@@ -410,9 +410,12 @@ public:
     virtual std::ostream& dump(std::ostream& os) const override;
 protected:
     virtual bool init(int sock) override;
+    // perform non-blocking SSL/TLS handshake using IOManager events
+    bool handshake();
 private:
     std::shared_ptr<SSL_CTX> m_ctx;
     std::shared_ptr<SSL> m_ssl;
+    bool m_handshake = false;
 };
 
 /**

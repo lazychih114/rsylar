@@ -1,9 +1,20 @@
 #ifndef __SYLAR_FIBER_H__
 #define __SYLAR_FIBER_H__
 
+#define LIBCO
+
 #include <memory>
 #include <functional>
+
+#if defined(LIBCO)
 #include "libco/coctx.h"
+#define coctx coctx_t
+#elif defined(UCONTEXT)
+#include <ucontext.h>
+#define coctx ucontext_t 
+#endif
+
+
 namespace sylar {
 
 class Scheduler;
@@ -109,7 +120,7 @@ public:
     /**
      * @brief 协程执行函数
      */
-    static void * run(void *, void *);
+    static void run();
 
 
     /**
@@ -127,7 +138,7 @@ private:
     /// 协程状态
     //State m_state = INIT;
     /// 协程上下文
-    coctx_t m_ctx;
+    coctx m_ctx;
     /// 协程运行栈指针
     void* m_stack = nullptr;
     /// 协程运行函数

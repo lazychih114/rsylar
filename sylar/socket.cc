@@ -5,10 +5,15 @@
 #include "macro.h"
 #include "hook.h"
 #include <limits.h>
+#include <fcntl.h>
 
 namespace sylar {
 
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
+
+// helper used by non-blocking operations: wait for fd event with timeout.
+// returns true if event triggered normally, false on error/timeout.
+// (Intentionally left no helper here to keep handshake logic simple)
 
 Socket::ptr Socket::CreateTCP(sylar::Address::ptr address) {
     Socket::ptr sock(new Socket(address->getFamily(), TCP, 0));
@@ -496,11 +501,11 @@ Socket::ptr SSLSocket::accept() {
         return nullptr;
     }
     sock->m_ctx = m_ctx;
-    
     if(sock->init(newsock)) {
         return sock;
     }
-    SYLAR_LOG_INFO(g_logger) << "accept(" << *sock << ") errno="
+    // init failed, close fd to avoid leak
+    SYLAR_LOG_INFO(g_logger) << "accept(" << *sock << ") init failed errno="
             << errno << " errstr=" << strerror(errno);
     return nullptr;
 }
@@ -529,15 +534,25 @@ bool SSLSocket::close() {
 }
 
 int SSLSocket::send(const void* buffer, size_t length, int flags) {
-    if(m_ssl) {
-        return SSL_write(m_ssl.get(), buffer, length);
+    if(!m_ssl) {
+        return -1;
     }
-    return -1;
+    if(!m_handshake) {
+        if(!handshake()) {
+            return -1;
+        }
+    }
+    return SSL_write(m_ssl.get(), buffer, length);
 }
 
 int SSLSocket::send(const iovec* buffers, size_t length, int flags) {
     if(!m_ssl) {
         return -1;
+    }
+    if(!m_handshake) {
+        if(!handshake()) {
+            return -1;
+        }
     }
     int total = 0;
     for(size_t i = 0; i < length; ++i) {
@@ -564,10 +579,15 @@ int SSLSocket::sendTo(const iovec* buffers, size_t length, const Address::ptr to
 }
 
 int SSLSocket::recv(void* buffer, size_t length, int flags) {
-    if(m_ssl) {
-        return SSL_read(m_ssl.get(), buffer, length);
+    if(!m_ssl) {
+        return -1;
     }
-    return -1;
+    if(!m_handshake) {
+        if(!handshake()) {
+            return -1;
+        }
+    }
+    return SSL_read(m_ssl.get(), buffer, length);
 }
 
 int SSLSocket::recv(iovec* buffers, size_t length, int flags) {
@@ -600,24 +620,70 @@ int SSLSocket::recvFrom(iovec* buffers, size_t length, Address::ptr from, int fl
 
 bool SSLSocket::init(int sock) {
     bool v = Socket::init(sock);
-    SYLAR_LOG_INFO(g_logger) << "ssl init " << v ; 
+    SYLAR_LOG_INFO(g_logger) << "ssl init " << v ;
     if(v) {
+        // 只做最小的 SSL 对象初始化, 不进行握手
         m_ssl.reset(SSL_new(m_ctx.get()),  SSL_free);
         SSL_set_fd(m_ssl.get(), m_sock);
-        int ret = SSL_accept(m_ssl.get());
-        if (ret <= 0) {
-        int err = SSL_get_error(m_ssl.get(), ret);
-        if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
-            // 非阻塞模式下需等待重试
-            SYLAR_LOG_INFO(g_logger) << "SSL_ERROR_WANT_READ";
-        } else {
-            // 处理致命错误
-            SYLAR_LOG_INFO(g_logger) << "SSL_accept error " << err;
-        }
-}
-        v = (SSL_accept(m_ssl.get()) == 1);
+        m_handshake = false;
     }
     return v;
+}
+
+bool SSLSocket::handshake() {
+    if(m_handshake) {
+        return true;
+    }
+    if(!m_ssl) {
+        return false;
+    }
+
+    // 超时时间（毫秒），避免无限等待
+    uint64_t timeout_ms = 60 * 1000; // 60s
+    FdCtx::ptr ctx = FdMgr::GetInstance()->get(m_sock);
+    if(ctx) {
+        uint64_t t = ctx->getTimeout(SO_RCVTIMEO);
+        if(t > 0) {
+            timeout_ms = t;
+        }
+    }
+
+    uint64_t start = sylar::GetCurrentMS();
+    while(true) {
+        int ret = SSL_accept(m_ssl.get());
+        if(ret == 1) {
+            m_handshake = true;
+            return true;
+        }
+        int err = SSL_get_error(m_ssl.get(), ret);
+        if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+            bool want_read = (err == SSL_ERROR_WANT_READ);
+            // wait for the required event or timeout
+            {
+                IOManager* iom = IOManager::GetThis();
+                if(!iom) {
+                    SYLAR_LOG_ERROR(g_logger) << "IOManager not exists in handshake";
+                    return false;
+                }
+                int rt = iom->addEvent(m_sock, want_read ? IOManager::READ : IOManager::WRITE);
+                if(rt) {
+                    SYLAR_LOG_ERROR(g_logger) << "handshake addEvent failed fd=" << m_sock;
+                    return false;
+                }
+                Fiber::GetThis()->yield();
+            }
+
+            uint64_t now = sylar::GetCurrentMS();
+            if(now - start >= timeout_ms) {
+                SYLAR_LOG_ERROR(g_logger) << "SSL_accept timeout fd=" << m_sock;
+                return false;
+            }
+            continue; // retry
+        }
+        SYLAR_LOG_ERROR(g_logger) << "SSL_accept fatal error fd=" << m_sock << " err=" << err;
+        return false;
+    }
+    return false;
 }
 
 bool SSLSocket::loadCertificates(const std::string& cert_file, const std::string& key_file) {
