@@ -28,6 +28,14 @@ public:
 private:
     /**
      * @brief Socket事件上下文类
+    *
+    * 注意：本结构 `IOManager::FdContext` 是 IOManager 内部用于管理某个
+    * 文件描述符上 epoll/事件驱动相关的事件上下文（例如读/写事件的调度器、
+    * 协程或回调）。它与 `sylar::FdCtx`（在 `fd_manager.h` 中定义）不同：
+    * - `sylar::FdCtx` 保存文件描述符的全局元信息（是否为 socket、阻塞标志、
+    *   超时时间等）；
+    * - `IOManager::FdContext` 关注事件触发与回调调度。两者可以互相配合，
+    *   但职责分离，名称相近时易混淆，特此说明。
      */
     struct FdContext {
         typedef Mutex MutexType;

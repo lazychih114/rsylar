@@ -3,6 +3,7 @@ project(rsylar)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include (cmake/utils.cmake)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
@@ -69,15 +70,20 @@ set(LIB_SRC
 add_library(rsylar SHARED ${LIB_SRC})
 force_redefine_file_macro_for_sources(rsylar)
 
+# Ensure rsylar shared library records its external dependencies
+target_link_libraries(rsylar PUBLIC ${OPENSSL_LIBRARIES} jsoncpp yaml-cpp)
+
 set(LIBS
         rsylar
         yaml-cpp
         jsoncpp
-        #${ZLIB_LIBRARIES}
         ${OPENSSL_LIBRARIES}
-        #${PROTOBUF_LIBRARIES}
         )
 
+add_subdirectory(rpc)
+list(APPEND LIBS rpc ${PROTOBUF_LIBRARIES})
+
+add_subdirectory(rpcExample)
 
 rsylar_add_executable(test_config "tests/test_config.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_env "tests/test_env.cc" rsylar "${LIBS}")

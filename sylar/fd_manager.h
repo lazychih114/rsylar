@@ -12,6 +12,10 @@ namespace sylar {
  * @brief 文件句柄上下文类
  * @details 管理文件句柄类型(是否socket)
  *          是否阻塞,是否关闭,读/写超时时间
+ *
+ * 注意：此类（FdCtx）表示系统级的文件句柄元信息。它保存的是与文件描述符
+ * 本身相关的属性（是否为 socket、是否被关闭、超时时间等）。不要将它与
+ * IOManager 内部用于 epoll/事件驱动的 `FdContext` 混淆，二者职责不同。
  */
 class FdCtx : public std::enable_shared_from_this<FdCtx> {
 public:

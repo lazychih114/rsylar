@@ -81,6 +81,7 @@ void Scheduler::start() {
 }
 
 void Scheduler::stop() {
+    SYLAR_LOG_INFO(g_logger) << "等待停止";
     m_autoStop = true;
     //调度协程不为空，新申请的线程数为0，并且主协程没有在忙碌
     if(m_rootFiber
