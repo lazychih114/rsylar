@@ -8,11 +8,12 @@
 
 #include <vector>
 #include "rpcprovider.h"
+sylar::Logger::ptr g_logger = SYLAR_LOG_ROOT();
 
 class FriendService : public fixbug::FiendServiceRpc {
  public:
   std::vector<std::string> GetFriendsList(uint32_t userid) {
-    std::cout << "local do GetFriendsList service! userid:" << userid << std::endl;
+    SYLAR_LOG_INFO(g_logger) << "local do GetFriendsList service! userid:" << userid;
     std::vector<std::string> vec;
     vec.push_back("gao yang");
     vec.push_back("liu hong");
@@ -31,26 +32,24 @@ class FriendService : public fixbug::FiendServiceRpc {
       std::string *p = response->add_friends();
       *p = name;
     }
-    done->Run();
   }
 };
-sylar::Logger::ptr g_logger = SYLAR_LOG_ROOT();
 
 int main(int argc, char **argv) {
   g_logger->setLevel(sylar::LogLevel::INFO);
   std::string ip = "127.0.0.1";
   short port = 7788;
-  auto stub = new fixbug::FiendServiceRpc_Stub(new MprpcChannel(ip, port, false));
+  auto stub = new fixbug::FiendServiceRpc_Stub(new sylar::rpc::MprpcChannel(ip, port, false));
   // provider是一个rpc网络服务对象。把UserService对象发布到rpc节点上
   sylar::IOManager iom(2,true,"iom");
   // RpcProvider provider;
-  std::shared_ptr<RpcProvider> provider = std::make_shared<RpcProvider>();
+  std::shared_ptr<sylar::rpc::RpcProvider> provider = std::make_shared<sylar::rpc::RpcProvider>();
   
 
   // 启动一个rpc服务发布节点   Run以后，进程进入阻塞状态，等待远程的rpc调用请求
-
-  iom.schedule([provider]() { provider->Run(1, 7788); });
   provider->NotifyService(new FriendService());
-  // iom.stop();
+  iom.schedule([provider]() { provider->Run(1, 7788); });
+  
+  iom.stop();
   return 0;
 }

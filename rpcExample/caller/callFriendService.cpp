@@ -10,14 +10,13 @@
 #include "mprpccontroller.h"
 #include "rpcprovider.h"
 
-int main(int argc, char **argv) {
-  // https://askubuntu.com/questions/754213/what-is-difference-between-localhost-address-127-0-0-1-and-127-0-1-1
-  std::string ip = "127.0.1.1";
+void rpc_test() {
+  std::string ip = "127.0.0.1";
   short port = 7788;
 
   // 演示调用远程发布的rpc方法Login
   fixbug::FiendServiceRpc_Stub stub(
-      new MprpcChannel(ip, port, true));  //注册进自己写的channel类，channel类用于自定义发送格式和负责序列化等操作
+      new sylar::rpc::MprpcChannel(ip, port, true));  //注册进自己写的channel类，channel类用于自定义发送格式和负责序列化等操作
   // rpc方法的请求参数
   fixbug::GetFriendsListRequest request;
   request.set_userid(1000);
@@ -51,7 +50,19 @@ int main(int argc, char **argv) {
         std::cout << "rpc GetFriendsList response error : " << response.result().errmsg() << std::endl;
       }
     }
-    sleep(5);  // sleep 5 seconds
+    sleep(3);  // sleep 3 seconds
   }
+}
+  
+
+
+sylar::Logger::ptr g_logger = SYLAR_LOG_ROOT();
+
+int main(int argc, char **argv) {
+  // https://askubuntu.com/questions/754213/what-is-difference-between-localhost-address-127-0-0-1-and-127-0-1-1
+  g_logger->setLevel(sylar::LogLevel::INFO);
+  sylar::IOManager iom(2,true,"iom");
+
+  iom.schedule(rpc_test);
   return 0;
 }

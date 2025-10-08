@@ -23,10 +23,6 @@ set(RPC_COMMON_SRC
 
 set(RPC_SRC ${RPC_COMMON_SRC})
 
-# generate pb sources from proto
-set(RPC_PROTO ${CMAKE_CURRENT_SOURCE_DIR}/rpcheader.proto)
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${RPC_PROTO})
-list(APPEND RPC_SRC ${PROTO_SRCS})
 
 # create rpc shared library
 add_library(rpc SHARED ${RPC_SRC} ${src_common})

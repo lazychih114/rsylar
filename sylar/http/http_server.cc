@@ -40,8 +40,10 @@ void HttpServer::handleClient(Socket::ptr client) {
 
         HttpResponse::ptr rsp(new HttpResponse(req->getVersion()
                             ,req->isClose() || !m_isKeepalive));
+        SYLAR_LOG_INFO(g_logger) << "response: " << *rsp;
         rsp->setHeader("Server", getName());
         m_dispatch->handle(req, rsp, session);
+        SYLAR_LOG_INFO(g_logger) << "response: " << *rsp;
         session->sendResponse(rsp);
 
         if(!m_isKeepalive || req->isClose()) {

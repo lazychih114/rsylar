@@ -39,7 +39,7 @@ set(LIB_SRC
     sylar/http/http.cc
     sylar/http/parser11/http11_parser.rl.cc
     sylar/http/parser11/httpclient_parser.rl.cc
-    # sylar/http/http_connection.cc
+    sylar/http/http_connection.cc
     sylar/http/http_parser.cc
     sylar/http/http_session.cc
     sylar/http/http_server.cc
@@ -59,6 +59,7 @@ set(LIB_SRC
     sylar/tcp_server.cc
     sylar/thread.cc
     sylar/timer.cc
+    sylar/uri.rl.cc
     sylar/util.cc
     # sylar/util/crypto_util.cc
     sylar/util/json_util.cc
@@ -103,6 +104,7 @@ rsylar_add_executable(test_http_parser "tests/test_http_parser.cc" rsylar "${LIB
 rsylar_add_executable(test_http_server "tests/test_http_server.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_daemon "tests/test_daemon.cc" rsylar "${LIBS}")
 rsylar_add_executable(my_http_server "tests/my_http_server.cc" rsylar "${LIBS}")
+rsylar_add_executable(test_http_connection "tests/test_http_connection.cc" rsylar "${LIBS}")
 
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

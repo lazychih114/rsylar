@@ -15,6 +15,11 @@
 #include <vector>
 using namespace std;
 
+namespace sylar {
+// forward-declare HttpConnection to avoid including the whole http header here
+namespace http { class HttpConnection; }
+namespace rpc {
+using namespace google;
 // 真正负责发送和接受的前后处理工作
 //  如消息的组织方式，向哪个节点发送等等
 class MprpcChannel : public google::protobuf::RpcChannel {
@@ -26,14 +31,11 @@ public:
   MprpcChannel(string ip, short port, bool connectNow);
 
 private:
-  int m_clientFd;
   const std::string m_ip;  //保存ip和端口，如果断了可以尝试重连
   const uint16_t m_port;
-  /// @brief 连接ip和端口,并设置m_clientFd
-  /// @param ip ip地址，本机字节序
-  /// @param port 端口，本机字节序
-  /// @return 成功返回空字符串，否则返回失败信息
-  bool newConnect(const char *ip, uint16_t port, string *errMsg);
+  std::shared_ptr<http::HttpConnection> m_httpconn; //可以尝试做长连接复用
 };
 
+}
+}
 #endif  // MPRPCCHANNEL_H
