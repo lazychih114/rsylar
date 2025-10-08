@@ -3,6 +3,7 @@
 #include <yaml-cpp/yaml.h>
 #include "sylar/env.h"
 #include <iostream>
+#include "sylar/iomanager.h"
 
 #if 1
 sylar::ConfigVar<int>::ptr g_int_value_config =
@@ -233,16 +234,19 @@ int main(int argc, char** argv) {
     sylar::EnvMgr::GetInstance()->init(argc, argv);
     test_loadconf();
     //sylar::Config::LogAllConfigVar();
-    std::cout << " ==== " << std::endl;
-    sleep(10);
-    test_loadconf();
-    return 0;
-    sylar::Config::Visit([](sylar::ConfigVarBase::ptr var) {
-        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "name=" << var->getName()
-                    << " description=" << var->getDescription()
-                    << " typename=" << var->getTypeName()
-                    << " value=" << var->toString();
-    });
-
+    // std::cout << " ==== " << std::endl << std::endl;
+    // sleep(3);
+    // test_loadconf();
+    // sylar::Config::Visit([](sylar::ConfigVarBase::ptr var) {
+    //     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "name=" << var->getName()
+    //                 << " description=" << var->getDescription()
+    //                 << " typename=" << var->getTypeName()
+    //                 << " value=" << var->toString();
+    // });
+    // 在程序初始化后，例如 main 或 server_main 中
+    sylar::IOManager iom(1);
+    iom.addTimer(5000, [](){
+        sylar::Config::LoadFromConfDir("conf");
+    }, true); // 每 5000ms 执行一次
     return 0;
 }

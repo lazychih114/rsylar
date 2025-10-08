@@ -2,6 +2,7 @@
 
 #include <string>
 #include <unordered_map>
+#include "sylar/config.h"
 
 // rpcserverip   rpcserverport    zookeeperip   zookeeperport
 // 框架读取配置文件类

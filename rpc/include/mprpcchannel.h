@@ -5,7 +5,6 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/service.h>
 #include <algorithm>
-#include <algorithm>  // 包含 std::generate_n() 和 std::generate() 函数的头文件
 #include <functional>
 #include <iostream>
 #include <map>

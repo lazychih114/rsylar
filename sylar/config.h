@@ -363,6 +363,7 @@ public:
     bool fromString(const std::string& val) override {
         try {
             setValue(FromStr()(val));
+            return true;
         } catch (std::exception& e) {
             SYLAR_LOG_ERROR(SYLAR_LOG_ROOT()) << "ConfigVar::fromString exception "
                 << e.what() << " convert: string to " << TypeToName<T>()
