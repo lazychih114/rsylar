@@ -42,14 +42,15 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     controller->SetFailed("serialize request error!");
     return;
   }
-
+  // SYLAR_LOG_INFO(g_logger) << "req=" << request->DebugString();
   // 发送请求
   http::HttpRequest::ptr req(new http::HttpRequest());
   req->setMethod(http::HttpMethod::POST);
   req->setPath("/rpc/" + service_name + "/" + method_name);
   req->setHeader("Content-Type", "application/octet-stream");
-  // req->setHeader("connection", "keep-alive");
   req->setClose(false);
+  req->setBody(req_str);
+  req->setHeader("Content-Length", std::to_string(req_str.size()));
   // SYLAR_LOG_INFO(g_logger) << "req=" << req->toString();
   m_httpconn->sendRequest(req);
 
@@ -63,6 +64,7 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
   }
   // SYLAR_LOG_INFO(g_logger) << "rsp=" << rsp->toString();
   response->ParseFromString(rsp->getBody());
+  // SYLAR_LOG_INFO(g_logger) << "rsp=" << response->DebugString();
 }
 
 

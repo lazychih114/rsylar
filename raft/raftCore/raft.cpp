@@ -347,9 +347,6 @@ void Raft::doHeartBeat()
           std::make_shared<raftRpcProctoc::AppendEntriesReply>();
       appendEntriesReply->set_appstate(Disconnected);
 
-      // std::thread t(&Raft::sendAppendEntries, this, i, appendEntriesArgs, appendEntriesReply,
-      //               appendNums);  // 创建新线程并执行b函数，并传递参数
-      // t.detach();
       m_ioManager->schedule([this, i, appendEntriesArgs, appendEntriesReply, appendNums]()
                             { sendAppendEntries(i, appendEntriesArgs, appendEntriesReply, appendNums); });
     }
@@ -710,6 +707,10 @@ void Raft::RequestVote(const raftRpcProctoc::RequestVoteArgs *args, raftRpcProct
     // 应该先持久化，再撤销lock
     persist();
   };
+  SYLAR_LOG_INFO(g_logger) << format("[handle-RequestVote] server info: args->term():{%d}, args->candidateid():{%d}, args->lastlogindex():{%d}, args->lastlogterm():{%d}",
+                                     args->term(), args->candidateid(), args->lastlogindex(), args->lastlogterm());
+  SYLAR_LOG_INFO(g_logger) << format("[handle-RequestVote] my info: m_currentTerm:{%d}, getLastLogIndex():{%d}, getLastLogTerm():{%d}",
+                                     m_currentTerm,getLastLogIndex(), getLastLogTerm());
   // fmt.Printf("[func-RequestVote-rf(%v)] receive RequestVote from %v, term is %v, lastLogIndex is %v,
   // 对args的term的三种情况分别进行处理，大于小于等于自己的term都是不同的处理
   //  reason: 出现网络分区，该竞选者已经OutOfDate(过时）
