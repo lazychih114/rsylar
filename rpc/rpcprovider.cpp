@@ -44,8 +44,7 @@ void RpcProvider::NotifyService(google::protobuf::Service *service) {
 // 启动rpc服务节点，开始提供rpc远程网络调用服务
 void RpcProvider::Run(int nodeIndex, short port) {
   // create an HTTP server and register a servlet for RPC，并支持长连接
-  http::HttpServer::ptr server(new http::HttpServer(true
-        , m_eventLoop, m_eventLoop, m_eventLoop));
+  http::HttpServer::ptr server(new http::HttpServer(true));
   m_server = server;
   server->setName("sylar_rpc_server");
 
@@ -54,10 +53,13 @@ void RpcProvider::Run(int nodeIndex, short port) {
   dispatch->addGlobServlet("/rpc/*", [this](http::HttpRequest::ptr req
                 , http::HttpResponse::ptr rsp
                 , http::HttpSession::ptr session)->int32_t {
+    // SYLAR_LOG_INFO(g_logger) << "RpcProvider::Run - Received RPC request: "
+                    //  << req->toString();
     // only accept POST
     if(req->getMethod() != http::HttpMethod::POST) {
       rsp->setStatus(http::HttpStatus::METHOD_NOT_ALLOWED);
       rsp->setBody("Only POST allowed\n");
+      SYLAR_LOG_ERROR(g_logger) << "RpcProvider::Run - " << rsp->getBody();
       return 0;
     }
     std::string body = req->getBody();
@@ -69,6 +71,7 @@ void RpcProvider::Run(int nodeIndex, short port) {
     if(path.size() <= prefix.size() || path.substr(0, prefix.size()) != prefix) {
       rsp->setStatus(http::HttpStatus::BAD_REQUEST);
       rsp->setBody("invalid rpc path, expected /rpc/<Service>/<Method>");
+      SYLAR_LOG_ERROR(g_logger) << "RpcProvider::Run - " << rsp->getBody();
       return 0;
     }
     std::string rest = path.substr(prefix.size());
@@ -76,6 +79,7 @@ void RpcProvider::Run(int nodeIndex, short port) {
     if(pos == std::string::npos) {
       rsp->setStatus(http::HttpStatus::BAD_REQUEST);
       rsp->setBody("invalid rpc path, missing method");
+      SYLAR_LOG_ERROR(g_logger) << "RpcProvider::Run - " << rsp->getBody();
       return 0;
     }
     std::string service_name = rest.substr(0, pos);
@@ -85,15 +89,18 @@ void RpcProvider::Run(int nodeIndex, short port) {
     if (it == m_serviceMap.end()) {
       rsp->setStatus(http::HttpStatus::NOT_FOUND);
       rsp->setBody("service not found");
+      SYLAR_LOG_ERROR(g_logger) << "RpcProvider::Run - " << rsp->getBody();
       return 0;
     }
     auto mit = it->second.m_methodMap.find(method_name);
     if (mit == it->second.m_methodMap.end()) {
       rsp->setStatus(http::HttpStatus::NOT_FOUND);
       rsp->setBody("method not found");
+      SYLAR_LOG_ERROR(g_logger) << "RpcProvider::Run - " << rsp->getBody();
       return 0;
     }
     
+    // SYLAR_LOG_INFO(g_logger) << "proto解析前";
     // 解析请求，反序列化参数
     google::protobuf::Service *service = it->second.m_service;
     const google::protobuf::MethodDescriptor *method = mit->second;
@@ -107,6 +114,9 @@ void RpcProvider::Run(int nodeIndex, short port) {
     }
     google::protobuf::Message *response = service->GetResponsePrototype(method).New();
 
+    // SYLAR_LOG_INFO(g_logger) << "RpcProvider::Run - Call method: "
+    //                  << service_name << "." << method_name
+    //                  << " with request: " << request->DebugString();
     // 调用server本地方法
     service->CallMethod(method, nullptr, request, response, nullptr);
 

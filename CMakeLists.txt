@@ -6,8 +6,8 @@ include (cmake/utils.cmake)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O3 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 enable_language(ASM)
 # -fno-omit-frame-pointer -fsanitize=thread
 
@@ -24,6 +24,16 @@ include_directories(.)
 find_package(OpenSSL REQUIRED)
 if(OPENSSL_FOUND)
     include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+find_package(Protobuf REQUIRED)
+if(NOT Protobuf_FOUND)
+	message(FATAL_ERROR "Protobuf not found, please install protobuf and protoc")
+endif()
+
+find_package(Boost REQUIRED COMPONENTS serialization)
+if(NOT Boost_FOUND)
+  message(FATAL_ERROR "Boost.Serialization not found")
 endif()
 
 
@@ -85,6 +95,9 @@ add_subdirectory(rpc)
 list(APPEND LIBS rpc ${PROTOBUF_LIBRARIES})
 
 add_subdirectory(rpcExample)
+add_subdirectory(skipList)
+add_subdirectory(raft)
+add_subdirectory(raftExample)
 
 rsylar_add_executable(test_config "tests/test_config.cc" rsylar "${LIBS}")
 rsylar_add_executable(test_env "tests/test_env.cc" rsylar "${LIBS}")

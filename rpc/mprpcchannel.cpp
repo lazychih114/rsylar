@@ -22,6 +22,12 @@ header_size + service_name method_name args_size + args
 void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
                               google::protobuf::RpcController* controller, const google::protobuf::Message* request,
                               google::protobuf::Message* response, google::protobuf::Closure* done) {
+
+  if (!connect()) {
+    controller->SetFailed("connect to server failed!");
+    SYLAR_LOG_ERROR(g_logger) << "connect to server failed!";
+    return;
+  }
   // 使用 HTTP 客户端发送 RPC 请求，body 保持原有的二进制格式：varint(header_len) + header + args
   const google::protobuf::ServiceDescriptor* sd = method->service();
   std::string service_name = sd->name();     // service_name
@@ -44,12 +50,12 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
   req->setHeader("Content-Type", "application/octet-stream");
   // req->setHeader("connection", "keep-alive");
   req->setClose(false);
-  SYLAR_LOG_INFO(g_logger) << "req=" << req->toString();
+  // SYLAR_LOG_INFO(g_logger) << "req=" << req->toString();
   m_httpconn->sendRequest(req);
 
 
   http::HttpResponse::ptr rsp = m_httpconn->recvResponse();
-  SYLAR_LOG_INFO(g_logger) << "rsp=" << rsp->toString();
+  // SYLAR_LOG_INFO(g_logger) << "rsp=" << rsp->toString();
   response->ParseFromString(rsp->getBody());
 }
 
@@ -65,22 +71,31 @@ MprpcChannel::MprpcChannel(string ip, short port, bool connectNow) : m_ip(ip), m
   if (!connectNow) {
     return;
   }  //可以允许延迟连接
-  sylar::Address::ptr addr = sylar::Address::LookupAnyIPAddress(ip+":"+std::to_string(port));
+  connect();
+  
+}
+bool MprpcChannel::connect() {
+  if (m_isConnected&&m_httpconn->isConnected()) {
+    return true;
+  }
+  sylar::Address::ptr addr = sylar::Address::LookupAnyIPAddress(m_ip + ":" + std::to_string(m_port));
   if(!addr) {
       SYLAR_LOG_INFO(g_logger) << "get addr error";
-      return;
+      return false;
   }
 
   sylar::Socket::ptr sock = sylar::Socket::CreateTCP(addr);
   bool rt = sock->connect(addr);
   if(!rt) {
       SYLAR_LOG_INFO(g_logger) << "connect " << *addr << " failed";
-      return;
+      return false;
   }
 
   m_httpconn = std::make_shared<http::HttpConnection>(sock);
+  m_isConnected = true;
+  
+  return true;
 }
-
 
 }
 }

@@ -35,21 +35,25 @@ class FriendService : public fixbug::FiendServiceRpc {
   }
 };
 
-int main(int argc, char **argv) {
-  g_logger->setLevel(sylar::LogLevel::INFO);
-  std::string ip = "127.0.0.1";
-  short port = 7788;
-  auto stub = new fixbug::FiendServiceRpc_Stub(new sylar::rpc::MprpcChannel(ip, port, false));
-  // provider是一个rpc网络服务对象。把UserService对象发布到rpc节点上
-  sylar::IOManager iom(2,true,"iom");
-  // RpcProvider provider;
-  std::shared_ptr<sylar::rpc::RpcProvider> provider = std::make_shared<sylar::rpc::RpcProvider>();
+void runnode(int nodeid, int port){
   
-
+  std::string ip = "127.0.0.1";
+  auto stub = new fixbug::FiendServiceRpc_Stub(new sylar::rpc::MprpcChannel(ip, port, false));
+  static std::shared_ptr<sylar::rpc::RpcProvider> g_provider;
+  auto provider = std::make_shared<sylar::rpc::RpcProvider>();
+  g_provider = provider;
+  // sylar::rpc::RpcProvider provider;
   // 启动一个rpc服务发布节点   Run以后，进程进入阻塞状态，等待远程的rpc调用请求
   provider->NotifyService(new FriendService());
-  iom.schedule([provider]() { provider->Run(1, 7788); });
+  provider->Run(nodeid,port); 
+}
+
+
+int main(int argc, char **argv) {
   
-  iom.stop();
+  g_logger->setLevel(sylar::LogLevel::INFO);
+  sylar::IOManager iom(2,true,"iom");
+
+  iom.schedule(std::bind(runnode, 1, 7788));
   return 0;
 }

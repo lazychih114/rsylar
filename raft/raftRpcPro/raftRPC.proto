@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+// Raft 内部节点间通信协议（AppendEntries / RequestVote / InstallSnapshot）
+// 工程化改进：使用 snake_case 命名、添加注释、字段语义更清晰
+package raftRpcProctoc; // keep compatibility with existing C++ code which expects namespace raftRpcProctoc
+
+option cc_generic_services = true;  // 生成 C++ 的 Service stub（与之前保持一致）
+
+// 日志条目：Command 为序列化后的状态机命令（业务字节流）
+message LogEntry {
+	bytes command = 1;    // 业务命令（bytes，二进制安全）
+	int32 logterm = 2;   // 该条目所属的任期
+	int32 logindex = 3;  // 该条目的全局索引
+}
+
+// AppendEntriesArgs: leader 用来复制日志或作为心跳
+message AppendEntriesArgs {
+	int32 term = 1;              // leader 的任期
+	int32 leaderid = 2;         // leader 节点 id
+	int32 prevlogindex = 3;    // prevLogIndex
+	int32 prevlogterm = 4;     // prevLogTerm
+	repeated LogEntry entries = 5; // 要复制的日志条目（可以为空，表示心跳）
+	int32 leadercommit = 6;     // leader 已提交的最高索引
+}
+
+// AppendEntriesReply: follower 对 leader 的回复
+message AppendEntriesReply {
+	int32 term = 1;          // follower 的当前任期（用于 leader 更新自身 term）
+	bool success = 2;        // 是否匹配并写入成功
+	int32 updatenextindex = 3; // 当不匹配时，leader 可用该字段快速调整 nextIndex（实现可选）
+	int32 appstate = 4;     // 可选的节点/网络状态代码（保留）
+}
+
+// RequestVote: 选举流程
+message RequestVoteArgs {
+	int32 term = 1;
+	int32 candidateid = 2;
+	int32 lastlogindex = 3;
+	int32 lastlogterm = 4;
+}
+
+message RequestVoteReply {
+	int32 term = 1;
+	bool votegranted = 2;
+	int32 votestate = 3; // 可选扩展字段，用于调试/观察
+}
+
+// InstallSnapshot: follower 日志落后过多时 leader 发送快照
+message InstallSnapshotRequest {
+	int32 leaderid = 1;
+	int32 term = 2;
+	int32 lastsnapshotincludeindex = 3; // 快照包含的最后索引
+	int32 lastsnapshotincludeterm = 4;  // 快照包含的最后索引对应的任期
+	bytes data = 5;                // 快照二进制数据（可能分块发送）
+}
+
+message InstallSnapshotResponse {
+	int32 term = 1;
+}
+
+// 只在 Raft 节点之间使用的服务接口（内部私有 RPC）
+service raftRpc {
+	rpc AppendEntries(AppendEntriesArgs) returns (AppendEntriesReply);
+	rpc InstallSnapshot(InstallSnapshotRequest) returns (InstallSnapshotResponse);
+	rpc RequestVote(RequestVoteArgs) returns (RequestVoteReply);
+}
+// message ResultCode
+// {
+//     int32 errcode = 1;
+//     bytes errmsg = 2;
+// }
+
+// message GetFriendsListRequest  //请求，响应
+// {
+//     uint32 userid = 1;
+// }
+
+// message GetFriendsListResponse  //请求，响应
+// {
+//     ResultCode result = 1;
+//     repeated bytes friends = 2;
+// }
+
+// // 好友模块
+// service FiendServiceRpc  //具体的服务模块和服务方法
+// {
+//     rpc GetFriendsList(GetFriendsListRequest) returns(GetFriendsListResponse);
+// }

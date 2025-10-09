@@ -1,6 +1,3 @@
-
-find_package(Protobuf REQUIRED)
-
 set(PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../friend.proto)
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 

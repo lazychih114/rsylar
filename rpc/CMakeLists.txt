@@ -1,12 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5)
 project(rpc)
-
-find_package(Protobuf REQUIRED)
-if(NOT Protobuf_FOUND)
-	message(FATAL_ERROR "Protobuf not found, please install protobuf and protoc")
-endif()
-
 
 # explicit sources (we will generate pb sources from .proto at build time)
 set(RPC_COMMON_SRC
@@ -36,6 +29,6 @@ target_include_directories(rpc PUBLIC
 target_link_libraries(rpc PUBLIC ${Protobuf_LIBRARIES} rsylar)
 
 # expose src list for top-level caching if needed
-set(src_rpc ${RPC_SRC} CACHE INTERNAL "rpc sources")
+# set(src_rpc ${RPC_SRC} CACHE INTERNAL "rpc sources")
 
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib)

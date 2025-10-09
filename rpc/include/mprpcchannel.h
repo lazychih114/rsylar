@@ -28,11 +28,14 @@ public:
                   const google::protobuf::Message *request, google::protobuf::Message *response,
                   google::protobuf::Closure *done) override;
   MprpcChannel(string ip, short port, bool connectNow);
-
+  bool connect();
 private:
   const std::string m_ip;  //保存ip和端口，如果断了可以尝试重连
   const uint16_t m_port;
   std::shared_ptr<http::HttpConnection> m_httpconn; //可以尝试做长连接复用
+  bool m_isConnected = false;
+
+  
 };
 
 }

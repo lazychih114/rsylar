@@ -25,7 +25,7 @@ void rpc_test() {
   // 发起rpc方法的调用,消费这的stub最后都会调用到channel的 call_method方法  同步的rpc调用过程  MprpcChannel::callmethod
   MprpcController controller;
   //長連接測試 ，發送10次請求
-  int count = 10;
+  int count = 1;
   while (count--) {
     std::cout << " 倒数" << count << "次发起RPC请求" << std::endl;
     stub.GetFriendsList(&controller, &request, &response, nullptr);

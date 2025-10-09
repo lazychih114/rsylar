@@ -547,7 +547,7 @@ void LogFormatter::init() {
 LoggerManager::LoggerManager() {
     m_root.reset(new Logger);
     m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
-
+    // m_root->addAppender(LogAppender::ptr(new UnixSocketLogAppender("/tmp/rsylar-log.sock")));
     m_loggers[m_root->m_name] = m_root;
 
     init();

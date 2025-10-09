@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+// 面向客户端的键值服务 RPC（Get / Put / Append）
+// 工程化改进：snake_case 命名、Op 使用 enum、返回结构化错误码、统一 package 名称
+package raftKVRpcProctoc; // keep compatibility with existing C++ code which expects namespace raftKVRpcProctoc
+
+option cc_generic_services = true;
+
+// 结构化错误返回，便于客户端判断
+message Error {
+  int32 code = 1;     // 0 表示成功，非 0 表示不同错误类型
+  string message = 2; // 可读错误信息
+}
+
+message GetArgs {
+  bytes key = 1;
+  bytes clientid = 2; // 用于去重（客户端标识）
+  int32 requestid = 3; // 使用 32 位与现有代码兼容
+}
+
+message GetReply {
+  string err = 1;    // 与现有 C++ 代码调用 reply->set_err(string)
+  bytes value = 2;
+}
+
+// PutAppend: 使用简单 string 表示操作（"Put" / "Append"），与现有 C++ 代码兼容
+message PutAppendArgs {
+  bytes key = 1;
+  bytes value = 2;
+  string op = 3;     // "Put" 或 "Append"
+  bytes clientid = 4;     // 幂等去重标识
+  int32 requestid = 5;    // 请求序号
+}
+
+message PutAppendReply {
+  string err = 1;
+}
+
+// 面向客户端的服务。通常客户端请求会被路由到当前 leader 节点
+service kvServerRpc {
+  rpc PutAppend(PutAppendArgs) returns (PutAppendReply);
+  rpc Get(GetArgs) returns (GetReply);
+}
+// message ResultCode
+// {
+//     int32 errcode = 1;
+//     bytes errmsg = 2;
+// }
+
+// message GetFriendsListRequest  //请求，响应
+// {
+//     uint32 userid = 1;
+// }
+
+// message GetFriendsListResponse  //请求，响应
+// {
+//     ResultCode result = 1;
+//     repeated bytes friends = 2;
+// }
+
+// // 好友模块
+// service FiendServiceRpc  //具体的服务模块和服务方法
+// {
+//     rpc GetFriendsList(GetFriendsListRequest) returns(GetFriendsListResponse);
+// }
