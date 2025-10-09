@@ -68,10 +68,10 @@ class Raft : public raftRpcProctoc::raftRpc {
   int m_lastSnapshotIncludeTerm;
 
   // 协程
-  std::unique_ptr<sylar::IOManager> m_ioManager = nullptr;
+  std::shared_ptr<sylar::IOManager> m_ioManager = nullptr;
 
  public:
-  void AppendEntries1(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply);
+  void AppendEntries(const raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *reply);
   void applierTicker();
   bool CondInstallSnapshot(int lastIncludedTerm, int lastIncludedIndex, std::string snapshot);
   void doElection();

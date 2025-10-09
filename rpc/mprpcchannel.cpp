@@ -55,6 +55,12 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
 
 
   http::HttpResponse::ptr rsp = m_httpconn->recvResponse();
+  if(!rsp) {
+    controller->SetFailed("recv response error!");
+    m_isConnected = false;
+    SYLAR_LOG_ERROR(g_logger) << "recv response error!";
+    return;
+  }
   // SYLAR_LOG_INFO(g_logger) << "rsp=" << rsp->toString();
   response->ParseFromString(rsp->getBody());
 }

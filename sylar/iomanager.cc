@@ -171,6 +171,9 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         SYLAR_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
                     << " event=" << (EPOLL_EVENTS)event
                     << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
+        
+        // BUG1
+        return -1;
         SYLAR_ASSERT(!(fd_ctx->events & event));
     }
 

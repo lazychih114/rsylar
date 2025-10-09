@@ -6,7 +6,7 @@
 
 #include <mprpcchannel.h>
 #include <mprpccontroller.h>
-
+static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 bool RaftRpcUtil::AppendEntries(raftRpcProctoc::AppendEntriesArgs *args, raftRpcProctoc::AppendEntriesReply *response) {
   MprpcController controller;
   stub_->AppendEntries(&controller, args, response, nullptr);
@@ -22,7 +22,18 @@ bool RaftRpcUtil::InstallSnapshot(raftRpcProctoc::InstallSnapshotRequest *args,
 
 bool RaftRpcUtil::RequestVote(raftRpcProctoc::RequestVoteArgs *args, raftRpcProctoc::RequestVoteReply *response) {
   MprpcController controller;
-  stub_->RequestVote(&controller, args, response, nullptr);
+  while(true){
+    if(m_mutex.try_lock()) {
+      stub_->RequestVote(&controller, args, response, nullptr); 
+      break;
+    }else{
+      auto cur = sylar::Fiber::GetThis();
+      cur->yield();
+      SYLAR_LOG_INFO(g_logger) << "------- 释放锁，等待重试";
+    }
+  }
+  m_mutex.unlock();
+
   return !controller.Failed();
 }
 
