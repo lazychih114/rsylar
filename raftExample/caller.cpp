@@ -10,7 +10,7 @@ void run(){
   Clerk client;
   client.Init("test.conf");
   auto start = now();
-  int count = 500;
+  int count = 30;
   int tmp = count;
   while (tmp--) {
     client.Put("x", std::to_string(tmp));
@@ -19,9 +19,11 @@ void run(){
     std::printf("get return :{%s}\r\n", get1.c_str());
   }
 }
-sylar::Logger::ptr g_logger = SYLAR_LOG_ROOT();
-int main() {
+static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("raft");
+int main(int argc, char **argv) {
+
   g_logger->setLevel(sylar::LogLevel::INFO);
+  sylar::Config::LoadFromConfDir(argv[1]);
   sylar::IOManager iom(2,true,"iom");
 
   iom.schedule(run);

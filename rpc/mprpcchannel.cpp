@@ -42,7 +42,9 @@ void MprpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
     controller->SetFailed("serialize request error!");
     return;
   }
-  // SYLAR_LOG_INFO(g_logger) << "req=" << request->DebugString();
+  SYLAR_LOG_INFO(g_logger) << " [func -MprpcChannel::CallMethod -rpcclient{" << m_ip << ":" << m_port
+                           << "}]Call Remote Method {" << service_name << "." << method_name
+                           << "} Request args size : {" << req_str.size() << "}";
   // 发送请求
   http::HttpRequest::ptr req(new http::HttpRequest());
   req->setMethod(http::HttpMethod::POST);

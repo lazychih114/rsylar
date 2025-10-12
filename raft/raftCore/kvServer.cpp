@@ -4,7 +4,7 @@
 
 #include "mprpcconfig.h"
 // #include "sylar/sylar.h"
-static sylar::Logger::ptr g_logger = SYLAR_LOG_ROOT();
+static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("raft");
 
 void KvServer::DprintfKVDB() {
   if (!Debug) {
@@ -12,9 +12,10 @@ void KvServer::DprintfKVDB() {
   }
   std::lock_guard<std::mutex> lg(m_mtx);
   DEFER {
-    // for (const auto &item: m_kvDB) {
-    //     DPrintf("[DBInfo ----]Key : %s, Value : %s", &item.first, &item.second);
-    // }
+    for (const auto &item: m_kvDB) {
+      SYLAR_LOG_INFO(g_logger) << format("[DBInfo ----]Key : %s, Value : %s", &item.first, &item.second);
+        // DPrintf("[DBInfo ----]Key : %s, Value : %s", &item.first, &item.second);
+    }
     m_skipList.display_list();
   };
 }
@@ -34,7 +35,9 @@ void KvServer::ExecuteAppendOpOnKVDB(Op op) {
   // }
   m_lastRequestId[op.ClientId] = op.RequestId;
   m_mtx.unlock();
-
+  SYLAR_LOG_INFO(g_logger) << format(
+      "[KVServerExeAPPEND-----]ClientId :%s ,RequestID :%d ,Key : %s, value : %s", op.ClientId.c_str(), op.RequestId,
+      op.Key.c_str(), op.Value.c_str());
   //    DPrintf("[KVServerExeAPPEND-----]ClientId :%d ,RequestID :%d ,Key : %v, value : %v", op.ClientId, op.RequestId,
   //    op.Key, op.Value)
   DprintfKVDB();
@@ -56,9 +59,15 @@ void KvServer::ExecuteGetOpOnKVDB(Op op, std::string *value, bool *exist) {
   m_mtx.unlock();
 
   if (*exist) {
+    SYLAR_LOG_INFO(g_logger) << format(
+        "[KVServerExeGET----]ClientId :%s ,RequestID :%d ,Key : %s, value : %s", op.ClientId.c_str(), op.RequestId,
+        op.Key.c_str(), value->c_str());
     //                DPrintf("[KVServerExeGET----]ClientId :%d ,RequestID :%d ,Key : %v, value :%v", op.ClientId,
     //                op.RequestId, op.Key, value)
   } else {
+    SYLAR_LOG_INFO(g_logger) << format(
+        "[KVServerExeGET----]ClientId :%s ,RequestID :%d ,Key : %s, But No KEY!!!!", op.ClientId.c_str(), op.RequestId,
+        op.Key.c_str());
     //        DPrintf("[KVServerExeGET----]ClientId :%d ,RequestID :%d ,Key : %v, But No KEY!!!!", op.ClientId,
     //        op.RequestId, op.Key)
   }
@@ -71,7 +80,9 @@ void KvServer::ExecutePutOpOnKVDB(Op op) {
   // m_kvDB[op.Key] = op.Value;
   m_lastRequestId[op.ClientId] = op.RequestId;
   m_mtx.unlock();
-
+  SYLAR_LOG_INFO(g_logger) << format(
+      "[KVServerExePUT----]ClientId :%s ,RequestID :%d ,Key : %s, value : %s", op.ClientId.c_str(), op.RequestId,
+      op.Key.c_str(), op.Value.c_str());
   //    DPrintf("[KVServerExePUT----]ClientId :%d ,RequestID :%d ,Key : %v, value : %v", op.ClientId, op.RequestId,
   //    op.Key, op.Value)
   DprintfKVDB();
@@ -99,15 +110,16 @@ void KvServer::Get(const raftKVRpcProctoc::GetArgs *args, raftKVRpcProctoc::GetR
   }
 
   // create waitForCh
+  SYLAR_LOG_INFO(g_logger) << "debug0 -------------- start";
   m_mtx.lock();
-
+  
   if (waitApplyCh.find(raftIndex) == waitApplyCh.end()) {
     waitApplyCh.insert(std::make_pair(raftIndex, new LockQueue<Op>()));
   }
   auto chForRaftIndex = waitApplyCh[raftIndex];
 
   m_mtx.unlock();  //直接解锁，等待任务执行完成，不能一直拿锁等待
-
+  SYLAR_LOG_INFO(g_logger) << "debug0 -------------- end";
   // timeout
   Op raftCommitOp;
 
@@ -169,10 +181,11 @@ void KvServer::GetCommandFromRaft(ApplyMsg message) {
   Op op;
   op.parseFromString(message.Command);
 
-  DPrintf(
-      "[KvServer::GetCommandFromRaft-kvserver{%d}] , Got Command --> Index:{%d} , ClientId {%s}, RequestId {%d}, "
-      "Opreation {%s}, Key :{%s}, Value :{%s}",
-      m_me, message.CommandIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
+  SYLAR_LOG_INFO(g_logger)
+      << " [KvServer::GetCommandFromRaft-kvserver{" << m_me << "}] , Got Command --> Index:{" << message.CommandIndex
+      << "} , ClientId {" << &op.ClientId << "}, RequestId {" << op.RequestId << "}, Opreation {" << &op.Operation
+      << "}, Key :{" << &op.Key << "}, Value :{" << &op.Value << "}";
+
   if (message.CommandIndex <= m_lastSnapShotRaftLogIndex) {
     return;
   }
@@ -218,6 +231,9 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
   op.Value = args->value();
   op.ClientId = args->clientid();
   op.RequestId = args->requestid();
+  SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver{" << m_me
+                           << "}]From Client {" << &args->clientid() << "} (Request {" << args->requestid()
+                           << "}) To Server {" << m_me << "}, key {" << &op.Key << "}, value {" << &op.Value << "}";
   int raftIndex = -1;
   int _ = -1;
   bool isleader = false;
@@ -225,18 +241,26 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
   m_raftNode->Start(op, &raftIndex, &_, &isleader);
 
   if (!isleader) {
-    DPrintf(
-        "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , but "
-        "not leader",
-        m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
+    SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver{" << m_me
+                             << "}]From Client {" << &args->clientid() << "} (Request {" << args->requestid()
+                             << "}) To Server {" << m_me << "}, key {" << &op.Key << "}, raftIndex {" << raftIndex
+                             << "} , but not leader";
+    // DPrintf(
+    //     "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , but "
+    //     "not leader",
+    //     m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
 
     reply->set_err(ErrWrongLeader);
     return;
   }
-  DPrintf(
-      "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , is "
-      "leader ",
-      m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
+  SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver{" << m_me
+                           << "}]From Client {" << &args->clientid() << "} (Request {" << args->requestid()
+                           << "}) To Server {" << m_me << "}, key {" << &op.Key << "}, raftIndex {" << raftIndex
+                           << "} , is leader ";
+  // DPrintf(
+  //     "[func -KvServer::PutAppend -kvserver{%d}]From Client %s (Request %d) To Server %d, key %s, raftIndex %d , is "
+  //     "leader ",
+  //     m_me, &args->clientid(), args->requestid(), m_me, &op.Key, raftIndex);
   m_mtx.lock();
   if (waitApplyCh.find(raftIndex) == waitApplyCh.end()) {
     waitApplyCh.insert(std::make_pair(raftIndex, new LockQueue<Op>()));
@@ -249,25 +273,29 @@ void KvServer::PutAppend(const raftKVRpcProctoc::PutAppendArgs *args, raftKVRpcP
   Op raftCommitOp;
 
   if (!chForRaftIndex->timeOutPop(CONSENSUS_TIMEOUT, &raftCommitOp)) {
-    DPrintf(
-        "[func -KvServer::PutAppend -kvserver{%d}]TIMEOUT PUTAPPEND !!!! Server %d , get Command <-- Index:%d , "
-        "ClientId %s, RequestId %s, Opreation %s Key :%s, Value :%s",
-        m_me, m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
+    SYLAR_LOG_INFO(g_logger)
+        << " [func -KvServer::PutAppend -kvserver{" << m_me << "}]TIMEOUT PUTAPPEND !!!! From Client {"
+        << &args->clientid() << "} (Request {" << args->requestid() << "}) To Server {" << m_me
+        << "}, key {" << &op.Key << "}, raftIndex {" << raftIndex << "}";
 
     if (ifRequestDuplicate(op.ClientId, op.RequestId)) {
       reply->set_err(OK);  // 超时了,但因为是重复的请求，返回ok，实际上就算没有超时，在真正执行的时候也要判断是否重复
     } else {
+      SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver wrong leader";
       reply->set_err(ErrWrongLeader);  ///这里返回这个的目的让clerk重新尝试
     }
   } else {
-    DPrintf(
-        "[func -KvServer::PutAppend -kvserver{%d}]WaitChanGetRaftApplyMessage<--Server %d , get Command <-- Index:%d , "
-        "ClientId %s, RequestId %d, Opreation %s, Key :%s, Value :%s",
-        m_me, m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
+    SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver{" << m_me
+                             << "}]WaitChanGetRaftApplyMessage<--Server {" << m_me
+                             << "} , get Command <-- Index:{" << raftIndex << "} , ClientId {" << &op.ClientId
+                             << "}, RequestId {" << op.RequestId << "}, Opreation {" << &op.Operation
+                             << "}, Key :{" << &op.Key << "}, Value :{" << &op.Value << "}";
+
     if (raftCommitOp.ClientId == op.ClientId && raftCommitOp.RequestId == op.RequestId) {
       //可能发生leader的变更导致日志被覆盖，因此必须检查
       reply->set_err(OK);
     } else {
+      SYLAR_LOG_INFO(g_logger) << " [func -KvServer::PutAppend -kvserver wrong leader";
       reply->set_err(ErrWrongLeader);
     }
   }
@@ -284,9 +312,9 @@ void KvServer::ReadRaftApplyCommandLoop() {
   while (true) {
     //如果只操作applyChan不用拿锁，因为applyChan自己带锁
     auto message = applyChan->Pop();  //阻塞弹出
-    DPrintf(
-        "---------------tmp-------------[func-KvServer::ReadRaftApplyCommandLoop()-kvserver{%d}] 收到了下raft的消息",
-        m_me);
+
+    SYLAR_LOG_INFO(g_logger)
+        << " [func -KvServer::ReadRaftApplyCommandLoop()-kvserver{" << m_me << "}] 收到了下raft的消息";
     // listen to every command applied by its raft ,delivery to relative RPC Handler
 
     if (message.CommandValid) {
@@ -325,19 +353,15 @@ void KvServer::ReadSnapShotToInstall(std::string snapshot) {
 
 bool KvServer::SendMessageToWaitChan(const Op &op, int raftIndex) {
   std::lock_guard<std::mutex> lg(m_mtx);
-  DPrintf(
-      "[RaftApplyMessageSendToWaitChan--> raftserver{%d}] , Send Command --> Index:{%d} , ClientId {%d}, RequestId "
-      "{%d}, Opreation {%v}, Key :{%v}, Value :{%v}",
-      m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
-
+  SYLAR_LOG_INFO(g_logger)
+      << " [RaftApplyMessageSendToWaitChan--> raftserver{" << m_me << "}] , Send Command --> Index:{" << raftIndex
+      << "} , ClientId {" << &op.ClientId << "}, RequestId {" << op.RequestId << "}, Opreation {" << &op.Operation
+      << "}, Key :{" << &op.Key << "}, Value :{" << &op.Value << "}";
   if (waitApplyCh.find(raftIndex) == waitApplyCh.end()) {
+    SYLAR_LOG_INFO(g_logger) << "debug -------------- no chan to send";
     return false;
   }
   waitApplyCh[raftIndex]->Push(op);
-  DPrintf(
-      "[RaftApplyMessageSendToWaitChan--> raftserver{%d}] , Send Command --> Index:{%d} , ClientId {%d}, RequestId "
-      "{%d}, Opreation {%v}, Key :{%v}, Value :{%v}",
-      m_me, raftIndex, &op.ClientId, op.RequestId, &op.Operation, &op.Key, &op.Value);
   return true;
 }
 
@@ -367,13 +391,11 @@ std::string KvServer::MakeSnapShot() {
 void KvServer::PutAppend(google::protobuf::RpcController *controller, const ::raftKVRpcProctoc::PutAppendArgs *request,
                          ::raftKVRpcProctoc::PutAppendReply *response, ::google::protobuf::Closure *done) {
   KvServer::PutAppend(request, response);
-  done->Run();
 }
 
 void KvServer::Get(google::protobuf::RpcController *controller, const ::raftKVRpcProctoc::GetArgs *request,
                    ::raftKVRpcProctoc::GetReply *response, ::google::protobuf::Closure *done) {
   KvServer::Get(request, response);
-  done->Run();
 }
 
 KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, short port) : m_skipList(6) {
@@ -453,6 +475,4 @@ KvServer::KvServer(int me, int maxraftstate, std::string nodeInforFileName, shor
 
 KvServer::~KvServer() {
   SYLAR_LOG_INFO(g_logger) << "KvServer::~KvServer()";
-  sylar::IOManager::GetThis()->stop();
-
 }

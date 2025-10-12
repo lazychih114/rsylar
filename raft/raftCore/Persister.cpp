@@ -3,6 +3,8 @@
 //
 #include "Persister.h"
 #include "util.h"
+#include "sylar/sylar.h"
+static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("raft");
 
 // todo:会涉及反复打开文件的操作，没有考虑如果文件出现问题会怎么办？？
 void Persister::Save(const std::string raftstate, const std::string snapshot) {
@@ -80,7 +82,7 @@ Persister::Persister(const int me)
     fileOpenFlag = false;
   }
   if (!fileOpenFlag) {
-    DPrintf("[func-Persister::Persister] file open error");
+    SYLAR_LOG_ERROR(g_logger) << "[func-Persister::Persister] file open error";
   }
   /**
    * 绑定流
