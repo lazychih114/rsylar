@@ -8,6 +8,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c++11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -O0 -fPIC -g -std=c11 -Wall -Wno-deprecated  -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 enable_language(ASM)
 # -fno-omit-frame-pointer -fsanitize=thread
 
@@ -54,9 +57,6 @@ set(LIB_SRC
     sylar/http/http_session.cc
     sylar/http/http_server.cc
     sylar/http/servlet.cc
-    #sylar/http/servlets/config_servlet.cc
-    #sylar/http/servlets/status_servlet.cc
-    # sylar/http/session_data.cc
     sylar/log.cc
     sylar/libco/coctx.h
     sylar/libco/coctx.cpp
@@ -71,9 +71,7 @@ set(LIB_SRC
     sylar/timer.cc
     sylar/uri.rl.cc
     sylar/util.cc
-    # sylar/util/crypto_util.cc
     sylar/util/json_util.cc
-    # sylar/util/hash_util.cc
     sylar/iomanager.cc
 
     )
@@ -81,44 +79,19 @@ set(LIB_SRC
 add_library(rsylar SHARED ${LIB_SRC})
 force_redefine_file_macro_for_sources(rsylar)
 
-# Ensure rsylar shared library records its external dependencies
-target_link_libraries(rsylar PUBLIC ${OPENSSL_LIBRARIES} jsoncpp yaml-cpp)
-
 set(LIBS
-        rsylar
         yaml-cpp
         jsoncpp
         ${OPENSSL_LIBRARIES}
+        ${PROTOBUF_LIBRARIES}
         )
+# Ensure rsylar shared library records its external dependencies
+target_link_libraries(rsylar PUBLIC ${LIBS})
+
 
 add_subdirectory(rpc)
-list(APPEND LIBS rpc ${PROTOBUF_LIBRARIES})
-
-add_subdirectory(rpcExample)
 add_subdirectory(skipList)
 add_subdirectory(raft)
-add_subdirectory(raftExample)
-
-rsylar_add_executable(test_config "tests/test_config.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_env "tests/test_env.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_fiber "tests/test_fiber.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_log "tests/test_log.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_scheduler "tests/test_scheduler.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_scheduler1 "tests/test_scheduler1.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_thread "tests/test_thread.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_iomanager "tests/test_iomanager.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_hook "tests/test_hook.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_address "tests/test_address.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_socket "tests/test_socket.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_bytearray "tests/test_bytearray.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_tcp_server "tests/test_tcp_server.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_http "tests/test_http.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_http_parser "tests/test_http_parser.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_http_server "tests/test_http_server.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_daemon "tests/test_daemon.cc" rsylar "${LIBS}")
-rsylar_add_executable(my_http_server "tests/my_http_server.cc" rsylar "${LIBS}")
-rsylar_add_executable(test_http_connection "tests/test_http_connection.cc" rsylar "${LIBS}")
+add_subdirectory(tests)
 
 
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)

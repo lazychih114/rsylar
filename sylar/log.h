@@ -10,6 +10,8 @@
 #include <vector>
 #include <stdarg.h>
 #include <map>
+#include <deque>
+#include <atomic>
 #include "fiber.h"
 #include "util.h"
 #include "singleton.h"
@@ -52,11 +54,6 @@
 /**
  * @brief 使用格式化方式将日志级别level的日志写入到logger
  */
-// #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
-//     if(logger->getLevel() <= level) \
-//         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
-//                         __FILE__, __LINE__, 0, 1234,\
-//                 0,time(0), "hello"))).getEvent()->format(fmt, __VA_ARGS__)
 #define SYLAR_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
@@ -101,6 +98,7 @@ namespace sylar {
 
 class Logger;
 class LoggerManager;
+class AsyncLogger;
 
 /**
  * @brief 日志级别
@@ -424,6 +422,7 @@ protected:
  */
 class Logger : public std::enable_shared_from_this<Logger> {
 friend class LoggerManager;
+friend class AsyncLogger;
 public:
     typedef std::shared_ptr<Logger> ptr;
     typedef Spinlock MutexType;
@@ -523,6 +522,8 @@ public:
      */
     std::string toYamlString();
 private:
+    void logInternal(LogLevel::Level level, LogEvent::ptr event);
+private:
     /// 日志名称
     std::string m_name;
     /// 日志级别
@@ -581,12 +582,30 @@ public:
      * @brief 构造函数
      */
     LoggerManager();
+    ~LoggerManager();
 
     /**
      * @brief 获取日志器
      * @param[in] name 日志器名称
      */
     Logger::ptr getLogger(const std::string& name);
+
+    /**
+     * @brief 设置是否启用异步日志
+     * @param[in] val true启用,false关闭
+     */
+    void setAsync(bool val);
+
+    /**
+     * @brief 是否启用异步日志
+     */
+    bool isAsync() const { return m_async.load(std::memory_order_relaxed); }
+
+    /**
+     * @brief 将日志事件投递到异步队列
+     * @param[in] event 日志事件
+     */
+    void dispatchAsync(LogEvent::ptr event);
 
     /**
      * @brief 初始化
@@ -609,6 +628,10 @@ private:
     std::map<std::string, Logger::ptr> m_loggers;
     /// 主日志器
     Logger::ptr m_root;
+    /// 是否启用异步日志
+    std::atomic<bool> m_async{false};
+    /// 异步日志调度器
+    std::shared_ptr<AsyncLogger> m_asyncDispatcher;
 };
 
 /// 日志器管理类单例模式

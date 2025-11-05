@@ -2,12 +2,113 @@
 #include <map>
 #include <iostream>
 #include <functional>
+#include <deque>
+#include <atomic>
 #include <time.h>
 #include <string.h>
 #include "config.h"
 #include "env.h"
 // #include "fiber.h"
 namespace sylar {
+
+class AsyncLogger {
+public:
+    AsyncLogger();
+    ~AsyncLogger();
+
+    void start();
+    void stop();
+    void push(LogEvent::ptr event);
+private:
+    void run();
+    typedef Mutex QueueMutexType;
+    QueueMutexType m_mutex;
+    Semaphore m_sem;
+    std::deque<LogEvent::ptr> m_queue;
+    std::atomic<bool> m_running{false};
+    std::atomic<bool> m_stopping{false};
+    Thread::ptr m_thread;
+};
+
+AsyncLogger::AsyncLogger()
+    :m_sem(0) {
+}
+
+AsyncLogger::~AsyncLogger() {
+    stop();
+}
+
+void AsyncLogger::start() {
+    bool expected = false;
+    if(!m_running.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) {
+        return;
+    }
+    m_stopping.store(false, std::memory_order_relaxed);
+    m_thread.reset(new Thread(std::bind(&AsyncLogger::run, this), "async_logger"));
+}
+
+void AsyncLogger::stop() {
+    if(!m_running.exchange(false, std::memory_order_acq_rel)) {
+        return;
+    }
+    m_stopping.store(true, std::memory_order_relaxed);
+    m_sem.notify();
+    if(m_thread) {
+        m_thread->join();
+        m_thread.reset();
+    }
+    m_stopping.store(false, std::memory_order_relaxed);
+}
+
+void AsyncLogger::push(LogEvent::ptr event) {
+    if(!m_running.load(std::memory_order_relaxed)) {
+        auto logger = event->getLogger();
+        if(logger) {
+            logger->logInternal(event->getLevel(), event);
+        }
+        return;
+    }
+    {
+        QueueMutexType::Lock lock(m_mutex);
+        m_queue.push_back(event);
+    }
+    m_sem.notify();
+}
+
+void AsyncLogger::run() {
+    while(true) {
+        m_sem.wait();
+        std::deque<LogEvent::ptr> events;
+        {
+            QueueMutexType::Lock lock(m_mutex);
+            events.swap(m_queue);
+        }
+        for(auto& event : events) {
+            auto logger = event->getLogger();
+            if(logger) {
+                logger->logInternal(event->getLevel(), event);
+            }
+        }
+        if(m_stopping.load(std::memory_order_relaxed)) {
+            QueueMutexType::Lock lock(m_mutex);
+            if(m_queue.empty()) {
+                break;
+            }
+        }
+    }
+
+    std::deque<LogEvent::ptr> events;
+    {
+        QueueMutexType::Lock lock(m_mutex);
+        events.swap(m_queue);
+    }
+    for(auto& event : events) {
+        auto logger = event->getLogger();
+        if(logger) {
+            logger->logInternal(event->getLevel(), event);
+        }
+    }
+}
 
 const char* LogLevel::ToString(LogLevel::Level level) {
     switch(level) {
@@ -313,16 +414,35 @@ void Logger::clearAppenders() {
 }
 
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
-    if(level >= m_level) {
-        auto self = shared_from_this();
+    if(level < m_level) {
+        return;
+    }
+    if(LoggerMgr::GetInstance()->isAsync()) {
+        LoggerMgr::GetInstance()->dispatchAsync(event);
+        return;
+    }
+    logInternal(level, event);
+}
+
+void Logger::logInternal(LogLevel::Level level, LogEvent::ptr event) {
+    Logger::ptr root;
+    LogLevel::Level root_level = LogLevel::UNKNOW;
+    {
         MutexType::Lock lock(m_mutex);
         if(!m_appenders.empty()) {
+            auto self = shared_from_this();
             for(auto& i : m_appenders) {
                 i->log(self, level, event);
             }
-        } else if(m_root) {
-            m_root->log(level, event);
+            return;
         }
+        root = m_root;
+        if(root) {
+            root_level = root->m_level;
+        }
+    }
+    if(root && level >= root_level) {
+        root->logInternal(level, event);
     }
 }
 
@@ -545,12 +665,17 @@ void LogFormatter::init() {
 
 
 LoggerManager::LoggerManager() {
+    m_asyncDispatcher.reset(new AsyncLogger);
     m_root.reset(new Logger);
     m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
-    // m_root->addAppender(LogAppender::ptr(new UnixSocketLogAppender("/tmp/rsylar-log.sock")));
     m_loggers[m_root->m_name] = m_root;
 
+    setAsync(true);
     init();
+}
+
+LoggerManager::~LoggerManager() {
+    setAsync(false);
 }
 
 Logger::ptr LoggerManager::getLogger(const std::string& name) {
@@ -564,6 +689,37 @@ Logger::ptr LoggerManager::getLogger(const std::string& name) {
     logger->m_root = m_root;
     m_loggers[name] = logger;
     return logger;
+}
+
+void LoggerManager::setAsync(bool val) {
+    bool current = m_async.load(std::memory_order_relaxed);
+    if(val == current) {
+        return;
+    }
+    if(val) {
+        if(!m_asyncDispatcher) {
+            m_asyncDispatcher.reset(new AsyncLogger);
+        }
+        m_asyncDispatcher->start();
+        m_async.store(true, std::memory_order_relaxed);
+    } else {
+        m_async.store(false, std::memory_order_relaxed);
+        if(m_asyncDispatcher) {
+            m_asyncDispatcher->stop();
+        }
+    }
+}
+
+void LoggerManager::dispatchAsync(LogEvent::ptr event) {
+    auto dispatcher = m_asyncDispatcher;
+    if(dispatcher) {
+        dispatcher->push(event);
+    } else {
+        auto logger = event->getLogger();
+        if(logger) {
+            logger->logInternal(event->getLevel(), event);
+        }
+    }
 }
 
 struct LogAppenderDefine {
